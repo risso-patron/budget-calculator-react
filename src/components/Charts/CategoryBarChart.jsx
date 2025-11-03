@@ -11,7 +11,7 @@ import {
   LabelList
 } from 'recharts';
 import { ChartContainer } from './ChartContainer';
-import { transformToBarData, CustomTooltip } from '../../utils/chartHelpers';
+import { transformToBarData, CustomTooltip } from '../../utils/chartHelpers.jsx';
 import { formatCurrency } from '../../utils/formatters';
 
 /**
@@ -24,7 +24,6 @@ export const CategoryBarChart = ({ categoryAnalysis, topN = 5 }) => {
   return (
     <ChartContainer
       title={`Top ${topN} Categorías de Gasto`}
-      icon="📊"
       isEmpty={isEmpty}
       emptyMessage="Añade gastos para ver el análisis por categorías"
       height="h-96"

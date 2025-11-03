@@ -15,9 +15,9 @@ const COLORS = ['#667eea', '#764ba2', '#2ecc71', '#3498db', '#e74c3c', '#f39c12'
 export const CategoryChart = ({ categoryAnalysis }) => {
   if (!categoryAnalysis || categoryAnalysis.length === 0) {
     return (
-      <Card title="Gastos por Categoría" icon="📊" className="col-span-full">
+      <Card title="Gastos por Categoría" className="col-span-full">
         <div className="text-center py-12 text-gray-400">
-          <p className="text-4xl mb-3">📊</p>
+          <p className="text-4xl mb-3"></p>
           <p>Sin gastos por categoría</p>
         </div>
       </Card>
@@ -31,7 +31,7 @@ export const CategoryChart = ({ categoryAnalysis }) => {
       name: category?.label || item.category,
       value: item.amount,
       percentage: item.percentage,
-      icon: category?.icon || '📦',
+      icon: category?.icon || '',
     };
   });
 
@@ -59,7 +59,7 @@ export const CategoryChart = ({ categoryAnalysis }) => {
   };
 
   return (
-    <Card title="Gastos por Categoría" icon="📊" className="col-span-full">
+    <Card title="Gastos por Categoría" className="col-span-full">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Gráfico circular */}
         <div className="h-80">
@@ -110,7 +110,7 @@ export const CategoryChart = ({ categoryAnalysis }) => {
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex items-center gap-3 flex-1">
-                  <span className="text-2xl">{category?.icon || '📦'}</span>
+                  <span className="text-2xl">{category?.icon || ''}</span>
                   <span className="font-medium text-dark-500">{item.category}</span>
                 </div>
                 

@@ -19,9 +19,9 @@ export const Alert = ({ type = 'success', message, onClose }) => {
   };
 
   const icons = {
-    success: '✓',
-    error: '✕',
-    info: 'ℹ',
+    success: '',
+    error: '',
+    info: '',
   };
 
   if (!message) return null;

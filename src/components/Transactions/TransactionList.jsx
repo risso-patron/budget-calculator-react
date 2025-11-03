@@ -18,11 +18,11 @@ export const TransactionList = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Lista de Ingresos */}
-      <Card title="Lista de Ingresos" icon="💰" className="flex flex-col">
+      <Card title="Lista de Ingresos" className="flex flex-col">
         <div className="flex-1 max-h-80 overflow-y-auto custom-scrollbar">
           {!hasIncomes ? (
             <div className="text-center py-12 text-gray-400">
-              <p className="text-4xl mb-3">📊</p>
+              <p className="text-4xl mb-3"></p>
               <p>{MESSAGES.EMPTY.NO_INCOMES}</p>
             </div>
           ) : (
@@ -42,11 +42,11 @@ export const TransactionList = ({
       </Card>
 
       {/* Lista de Gastos */}
-      <Card title="Lista de Gastos" icon="💳" className="flex flex-col">
+      <Card title="Lista de Gastos" className="flex flex-col">
         <div className="flex-1 max-h-80 overflow-y-auto custom-scrollbar">
           {!hasExpenses ? (
             <div className="text-center py-12 text-gray-400">
-              <p className="text-4xl mb-3">📊</p>
+              <p className="text-4xl mb-3"></p>
               <p>{MESSAGES.EMPTY.NO_EXPENSES}</p>
             </div>
           ) : (

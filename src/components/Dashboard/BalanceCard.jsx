@@ -12,7 +12,7 @@ export const BalanceCard = ({ totalIncome, totalExpenses, balance }) => {
 
   return (
     <Card className="bg-gradient-dark text-white col-span-full">
-      <h2 className="text-xl font-medium mb-6 opacity-90">📊 Resumen Financiero</h2>
+      <h2 className="text-xl font-medium mb-6 opacity-90">Resumen Financiero</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Total Ingresos */}

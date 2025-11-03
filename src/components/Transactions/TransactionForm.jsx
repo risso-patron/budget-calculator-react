@@ -58,7 +58,7 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Formulario de Ingresos */}
-      <Card title="Ingresos" icon="💰">
+      <Card title="Ingresos">
         <form onSubmit={handleIncomeSubmit} className="space-y-4">
           <div>
             <label htmlFor="incomeDescription" className="block text-sm font-medium text-gray-700 mb-2">
@@ -99,7 +99,7 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
       </Card>
 
       {/* Formulario de Gastos */}
-      <Card title="Gastos" icon="💳">
+      <Card title="Gastos">
         <form onSubmit={handleExpenseSubmit} className="space-y-4">
           <div>
             <label htmlFor="expenseDescription" className="block text-sm font-medium text-gray-700 mb-2">

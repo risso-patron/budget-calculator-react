@@ -1,13 +1,13 @@
-// Categorías de gastos con iconos emoji
+// Categorías de gastos
 export const EXPENSE_CATEGORIES = [
-  { value: 'Vivienda', label: 'Vivienda', icon: '🏠' },
-  { value: 'Alimentación', label: 'Alimentación', icon: '🍽️' },
-  { value: 'Transporte', label: 'Transporte', icon: '🚗' },
-  { value: 'Entretenimiento', label: 'Entretenimiento', icon: '🎬' },
-  { value: 'Salud', label: 'Salud', icon: '⚕️' },
-  { value: 'Educación', label: 'Educación', icon: '📚' },
-  { value: 'Servicios', label: 'Servicios', icon: '💡' },
-  { value: 'Otros', label: 'Otros', icon: '📦' },
+  { value: 'Vivienda', label: 'Vivienda', icon: '' },
+  { value: 'Alimentación', label: 'Alimentación', icon: '' },
+  { value: 'Transporte', label: 'Transporte', icon: '' },
+  { value: 'Entretenimiento', label: 'Entretenimiento', icon: '' },
+  { value: 'Salud', label: 'Salud', icon: '' },
+  { value: 'Educación', label: 'Educación', icon: '' },
+  { value: 'Servicios', label: 'Servicios', icon: '' },
+  { value: 'Otros', label: 'Otros', icon: '' },
 ];
 
 // Tipos de transacciones

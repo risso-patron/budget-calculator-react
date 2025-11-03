@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { ChartContainer } from './ChartContainer';
-import { transformToDonutData, CustomTooltip } from '../../utils/chartHelpers';
+import { transformToDonutData, CustomTooltip } from '../../utils/chartHelpers.jsx';
 import { formatCurrency } from '../../utils/formatters';
 
 /**
@@ -15,7 +15,6 @@ export const BalanceDonutChart = ({ totalIncome, totalExpenses }) => {
   return (
     <ChartContainer
       title="Balance General"
-      icon="💰"
       isEmpty={isEmpty}
       emptyMessage="Añade ingresos o gastos para ver tu balance"
       height="h-96"

@@ -1,4 +1,4 @@
-# 💰 Calculadora de Presupuesto Personal
+# Calculadora de Presupuesto Personal
 
 Aplicación web moderna para gestión de finanzas personales construida con React, Vite y TailwindCSS. Permite llevar un control detallado de ingresos y gastos con análisis por categorías y visualización de datos.
 
@@ -9,26 +9,26 @@ Aplicación web moderna para gestión de finanzas personales construida con Reac
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-## 🎯 Características
+## Características
 
-- ✅ **Gestión de Ingresos y Gastos**: Añade, visualiza y elimina transacciones fácilmente
-- 📊 **Análisis por Categorías**: 8 categorías predefinidas con visualización en gráfico circular
-- 💾 **Persistencia de Datos**: Almacenamiento local con sincronización automática entre pestañas
-- 📱 **Diseño Responsive**: Interfaz adaptable a dispositivos móviles, tablets y desktop
-- 🎨 **UI Moderna**: Diseño con gradientes morados/azules, glass morphism y animaciones suaves
-- ⚡ **Validación en Tiempo Real**: Validación de formularios con feedback inmediato
-- 📈 **Balance Automático**: Cálculo instantáneo de balance con indicadores visuales
-- 🔔 **Notificaciones**: Alertas toast para confirmación de acciones
+- **Gestión de Ingresos y Gastos**: Añade, visualiza y elimina transacciones fácilmente
+- **Análisis por Categorías**: 8 categorías predefinidas con visualización en gráfico circular
+- **Persistencia de Datos**: Almacenamiento local con sincronización automática entre pestañas
+- **Diseño Responsive**: Interfaz adaptable a dispositivos móviles, tablets y desktop
+- **UI Moderna**: Diseño con gradientes morados/azules, glass morphism y animaciones suaves
+- **Validación en Tiempo Real**: Validación de formularios con feedback inmediato
+- **Balance Automático**: Cálculo instantáneo de balance con indicadores visuales
+- **Notificaciones**: Alertas toast para confirmación de acciones
 
-## 🚀 Demo
+## Demo
 
-🔗 **[Ver Demo en Vivo](https://luisitorisso.github.io/budget-calculator-react/)** *(próximamente)*
+**[Ver Demo en Vivo](https://luisitorisso.github.io/budget-calculator-react/)** *(próximamente)*
 
-## 📸 Capturas
+## Capturas
 
 *[Las capturas se agregarán después del despliegue]*
 
-## 🛠️ Tecnologías
+## Tecnologías
 
 ### Core
 - **React 18** - Biblioteca de interfaz de usuario
@@ -44,7 +44,7 @@ Aplicación web moderna para gestión de finanzas personales construida con Reac
 - **Autoprefixer** - Prefijos CSS automáticos
 - **ESLint** - Linting de código JavaScript
 
-## 💡 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 budget-calculator-react/
@@ -77,7 +77,7 @@ budget-calculator-react/
 └── vite.config.js                   # Configuración Vite
 ```
 
-## 📦 Instalación
+## Instalación
 
 ### Prerrequisitos
 
@@ -107,7 +107,7 @@ npm run dev
 http://localhost:5173
 ```
 
-## 🎮 Uso
+## Uso
 
 ### Añadir un Ingreso
 1. En la sección "Nuevo Ingreso", ingresa la descripción (ej: "Salario mensual")
@@ -117,18 +117,18 @@ http://localhost:5173
 ### Añadir un Gasto
 1. En la sección "Nuevo Gasto", ingresa la descripción (ej: "Alquiler")
 2. Ingresa el monto (ej: "600")
-3. Selecciona una categoría (ej: "Vivienda 🏠")
+3. Selecciona una categoría (ej: "Vivienda")
 4. Presiona Enter o haz clic en "Añadir Gasto"
 
 ### Eliminar una Transacción
-- Haz clic en el botón "Eliminar" (🗑️) junto a cualquier ingreso o gasto
+- Haz clic en el botón "Eliminar" junto a cualquier ingreso o gasto
 
 ### Ver Análisis
 - El balance se actualiza automáticamente en la tarjeta superior
 - El gráfico circular muestra la distribución de gastos por categoría
 - Las barras de progreso indican el porcentaje de cada categoría
 
-## 🎓 Aprendizajes
+## Aprendizajes
 
 Durante la construcción de este proyecto, aprendí:
 
@@ -142,7 +142,7 @@ Durante la construcción de este proyecto, aprendí:
 - **PropTypes**: Validación de props en componentes para desarrollo más seguro
 - **Optimización con useMemo**: Memoización de cálculos complejos para mejor rendimiento
 
-## 🔮 Próximas Mejoras
+## Próximas Mejoras
 
 - [ ] Filtrado por fechas (hoy, esta semana, este mes)
 - [ ] Exportación de datos a CSV/PDF
@@ -155,7 +155,7 @@ Durante la construcción de este proyecto, aprendí:
 - [ ] Recordatorios de gastos recurrentes
 - [ ] PWA (Progressive Web App)
 
-## 🧪 Comandos Disponibles
+## Comandos Disponibles
 
 ```bash
 # Desarrollo

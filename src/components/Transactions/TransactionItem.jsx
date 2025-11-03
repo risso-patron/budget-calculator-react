@@ -19,7 +19,7 @@ export const TransactionItem = ({ transaction, type, onRemove, index }) => {
         <div className="font-semibold text-dark-500">{transaction.description}</div>
         {!isIncome && transaction.category && (
           <div className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-            <span>{category?.icon || '📦'}</span>
+            <span>{category?.icon || ''}</span>
             <span>{transaction.category}</span>
           </div>
         )}
