@@ -1,6 +1,6 @@
-# 🧪 Guía de Testing Rápido - Integración de IA
+# Guía de Testing Rápido - Integración de IA
 
-## 🚀 Setup Rápido (5 minutos)
+## Setup Rápido (5 minutos)
 
 ### 1. Configurar API Key
 
@@ -23,7 +23,7 @@ Navega a: http://localhost:5173
 
 ---
 
-## ✅ Tests Básicos
+## Tests Básicos
 
 ### TEST 1: Verificar que la API Key funciona
 
@@ -35,8 +35,8 @@ console.log(import.meta.env.VITE_ANTHROPIC_API_KEY)
 // Debe mostrar: "sk-ant-api03-..."
 ```
 
-**✅ Esperado:** Ver tu API key (comienza con `sk-ant-api03-`)
-**❌ Error:** `undefined` → Revisa tu archivo `.env` y reinicia el servidor
+**Esperado:** Ver tu API key (comienza con `sk-ant-api03-`)
+**Error:** `undefined` → Revisa tu archivo `.env` y reinicia el servidor
 
 ---
 
@@ -47,21 +47,21 @@ console.log(import.meta.env.VITE_ANTHROPIC_API_KEY)
 2. Mezcla ingresos y gastos
 
 #### Pasos:
-1. Busca el panel morado/azul "🤖 Análisis Financiero con IA"
+1. Busca el panel morado/azul "Análisis Financiero con IA"
 2. Haz clic en "Analizar mis finanzas"
 3. Espera 3-5 segundos
 
-**✅ Esperado:**
+**Esperado:**
 - Spinner de carga
 - Score de salud (0-100) con color
 - Resumen de situación
 - 3 patrones identificados
 - 3 recomendaciones
 
-**❌ Error común:** "API Key de Anthropic no configurada"
+**Error común:** "API Key de Anthropic no configurada"
 - **Solución:** Revisa que `.env` está en la raíz y tiene la key correcta
 
-**❌ Error común:** "No hay transacciones para analizar"
+**Error común:** "No hay transacciones para analizar"
 - **Solución:** Agrega al menos 3-5 transacciones primero
 
 ---
@@ -74,7 +74,7 @@ console.log(import.meta.env.VITE_ANTHROPIC_API_KEY)
 3. Espera 1 segundo
 4. Observa el mensaje de sugerencia
 
-**✅ Esperado:**
+**Esperado:**
 - Aparece panel morado: "Sugerencia de IA"
 - Categoría sugerida: "Transporte"
 - Badge de confianza: "Alta confianza"
@@ -86,7 +86,7 @@ console.log(import.meta.env.VITE_ANTHROPIC_API_KEY)
 - `Alquiler` → Vivienda
 - `Doctor` → Salud
 
-**❌ No aparece sugerencia:**
+**No aparece sugerencia:**
 - Escribe más de 3 caracteres
 - Espera 800ms (hay debounce automático)
 - Verifica en consola si hay errores
@@ -119,14 +119,14 @@ const testTransactions = [
 1. Busca el gráfico "Predicción de Gastos"
 2. Debe aparecer automáticamente si tienes 2+ meses de datos
 
-**✅ Esperado:**
+**Esperado:**
 - Gráfico con barras/líneas de meses históricos (azul)
 - Línea punteada para "Próximo Mes" (morado)
 - Área sombreada (rango de confianza)
 - Lista de predicciones por categoría
 - Advertencias (si aplica)
 
-**❌ No aparece:**
+**No aparece:**
 - Mensaje: "No hay datos suficientes"
 - **Solución:** Agrega transacciones de diferentes meses
 
@@ -135,11 +135,11 @@ const testTransactions = [
 ### TEST 5: Alertas Inteligentes
 
 #### Pasos:
-1. Busca el ícono de campana (🔔) en el header
+1. Busca el ícono de campana en el header
 2. Haz clic
 3. Haz clic en "Actualizar" (ícono de refresh)
 
-**✅ Esperado si hay anomalías:**
+**Esperado si hay anomalías:**
 - Badge rojo/morado con número
 - Panel con lista de alertas
 - Cada alerta muestra:
@@ -148,7 +148,7 @@ const testTransactions = [
   - Mensaje descriptivo
   - Acción sugerida
 
-**✅ Esperado si NO hay anomalías:**
+**Esperado si NO hay anomalías:**
 - Mensaje: "Todo en orden"
 - "No se detectaron gastos inusuales"
 
@@ -159,7 +159,7 @@ const testTransactions = [
 
 ---
 
-## 🔍 Tests Avanzados
+## Tests Avanzados
 
 ### TEST 6: Verificar Caché
 
@@ -168,16 +168,16 @@ const testTransactions = [
 3. Haz clic en "Actualizar análisis" inmediatamente
 4. Nota el tiempo de respuesta (~0.1 segundos)
 
-**✅ Esperado:** 
+**Esperado:** 
 - Segunda llamada mucho más rápida
-- Consola muestra: "✅ Respuesta obtenida desde caché"
+- Consola muestra: "Respuesta obtenida desde caché"
 
 ### TEST 7: Verificar Rate Limiting
 
 1. Haz clic en "Analizar" 11 veces seguidas muy rápido
 2. Observa los errores
 
-**✅ Esperado:**
+**Esperado:**
 - Primeras 10 llamadas funcionan
 - Llamada 11: "Has excedido el límite de análisis. Espera 1 minuto."
 
@@ -187,13 +187,13 @@ const testTransactions = [
 2. Haz scroll hasta el footer
 3. Observa "Tokens usados" y "Costo estimado"
 
-**✅ Esperado:**
+**Esperado:**
 - Tokens: ~300-800
 - Costo: ~$0.005-$0.015
 
 ---
 
-## 📊 Validación de Respuestas
+## Validación de Respuestas
 
 ### Calidad del Análisis
 
@@ -231,7 +231,7 @@ Si ves respuestas genéricas, reporta en GitHub Issues.
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Error: "Failed to fetch"
 
@@ -276,24 +276,24 @@ console.log(result)
 
 ---
 
-## 📈 Métricas de Éxito
+## Métricas de Éxito
 
 ### Para considerar la integración exitosa:
 
-- ✅ Análisis financiero genera score válido (0-100)
-- ✅ Patrones son específicos y relevantes
-- ✅ Recomendaciones son accionables
-- ✅ Categorización tiene >80% de precisión
-- ✅ Predicciones dentro de ±20% de realidad
-- ✅ Alertas detectan anomalías reales
-- ✅ Costo por usuario <$0.10/mes
-- ✅ Tiempo de respuesta <5 segundos
-- ✅ Caché reduce llamadas en 50%+
-- ✅ Rate limiting previene abuso
+- Análisis financiero genera score válido (0-100)
+- Patrones son específicos y relevantes
+- Recomendaciones son accionables
+- Categorización tiene >80% de precisión
+- Predicciones dentro de ±20% de realidad
+- Alertas detectan anomalías reales
+- Costo por usuario <$0.10/mes
+- Tiempo de respuesta <5 segundos
+- Caché reduce llamadas en 50%+
+- Rate limiting previene abuso
 
 ---
 
-## 🎯 Siguiente Nivel
+## Siguiente Nivel
 
 Una vez que todos los tests básicos pasen:
 
@@ -305,7 +305,7 @@ Una vez que todos los tests básicos pasen:
 
 ---
 
-## 📞 Reportar Issues
+## Reportar Issues
 
 Si encuentras problemas:
 
@@ -319,4 +319,4 @@ Si encuentras problemas:
 
 ---
 
-**Happy Testing! 🚀**
+**Happy Testing!**

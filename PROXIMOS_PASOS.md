@@ -1,16 +1,16 @@
-# ✅ PRÓXIMOS PASOS - Configuración Supabase
+# PRÓXIMOS PASOS - Configuración Supabase
 
 ## Estado Actual:
-- ✅ Proyecto creado: `budget-calculator`
-- ✅ Archivo `.env` creado con credenciales
-- ✅ `.gitignore` actualizado
-- ✅ Instalando `@supabase/supabase-js`
+- Proyecto creado: `budget-calculator`
+- Archivo `.env` creado con credenciales
+- `.gitignore` actualizado
+- Instalando `@supabase/supabase-js`
 
 ---
 
-## 📋 PASOS SIGUIENTES (HAZ ESTO AHORA):
+## PASOS SIGUIENTES (HAZ ESTO AHORA):
 
-### PASO 1: Ejecutar el Script SQL en Supabase ⚠️ IMPORTANTE
+### PASO 1: Ejecutar el Script SQL en Supabase - IMPORTANTE
 
 1. **Abre tu proyecto en Supabase:**
    ```
@@ -38,8 +38,8 @@
 7. **Verifica las tablas:**
    - Ve a **"Table Editor"** en la barra lateral
    - Deberías ver dos tablas:
-     - ✅ `user_profiles`
-     - ✅ `transactions`
+     - `user_profiles`
+     - `transactions`
 
 ---
 
@@ -53,8 +53,8 @@
 2. **Haz clic en "Email" para expandir la configuración**
 
 3. **Configura estas opciones:**
-   - ❌ **Confirm email** → DESACTIVADO (para desarrollo rápido)
-   - ✅ **Enable email autoconfirm** → ACTIVADO
+   - **Confirm email** → DESACTIVADO (para desarrollo rápido)
+   - **Enable email autoconfirm** → ACTIVADO
    
    Esto te permitirá crear cuentas y hacer login inmediatamente sin confirmar el email.
 
@@ -74,7 +74,7 @@ Esto iniciará el servidor en `http://localhost:5173`
 
 ---
 
-## 🧪 PASO 4: Probar la Autenticación
+## PASO 4: Probar la Autenticación
 
 1. **Abre el navegador:**
    ```
@@ -95,7 +95,7 @@ Esto iniciará el servidor en `http://localhost:5173`
 
 ---
 
-## 🔄 PASO 5: Migración de Datos (Si tienes datos en localStorage)
+## PASO 5: Migración de Datos (Si tienes datos en localStorage)
 
 Si ya tenías transacciones guardadas localmente:
 
@@ -106,7 +106,7 @@ Si ya tenías transacciones guardadas localmente:
 
 ---
 
-## ❌ Troubleshooting
+## Troubleshooting
 
 ### Si ves "Faltan las variables de entorno de Supabase":
 ```bash
@@ -124,21 +124,21 @@ npm run dev
 
 ---
 
-## 📝 Resumen de Archivos Creados/Actualizados:
+## Resumen de Archivos Creados/Actualizados:
 
-- ✅ `.env` - Credenciales de Supabase (NO se sube a GitHub)
-- ✅ `.env.example` - Plantilla actualizada
-- ✅ `.gitignore` - Agregado `.env`
-- ✅ `supabase-setup.sql` - Script de base de datos
-- ✅ `src/lib/supabase.js` - Cliente de Supabase
-- ✅ `src/contexts/AuthContext.jsx` - Contexto de autenticación
-- ✅ `src/components/Auth/*` - Componentes de login/registro
-- ✅ `src/utils/dataMigration.js` - Migración de localStorage
-- ✅ `src/components/MigrationDialog.jsx` - Diálogo de migración
+- `.env` - Credenciales de Supabase (NO se sube a GitHub)
+- `.env.example` - Plantilla actualizada
+- `.gitignore` - Agregado `.env`
+- `supabase-setup.sql` - Script de base de datos
+- `src/lib/supabase.js` - Cliente de Supabase
+- `src/contexts/AuthContext.jsx` - Contexto de autenticación
+- `src/components/Auth/*` - Componentes de login/registro
+- `src/utils/dataMigration.js` - Migración de localStorage
+- `src/components/MigrationDialog.jsx` - Diálogo de migración
 
 ---
 
-## 🎯 Checklist:
+## Checklist:
 
 - [ ] Ejecutar script SQL en Supabase
 - [ ] Configurar autenticación (desactivar confirm email)

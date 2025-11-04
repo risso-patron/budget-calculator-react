@@ -54,51 +54,51 @@ Para que la IA funcione bien, necesitas datos. Agrega al menos:
 
 ### PASO 4: Prueba las funciones de IA
 
-#### 🔔 TEST 1: Alertas Inteligentes
+#### TEST 1: Alertas Inteligentes
 1. Busca el **ícono de campana** en el header (junto al menú de perfil)
 2. Click en la campana
 3. Click en **"Actualizar alertas"**
 4. Espera 3-5 segundos
-5. ✅ Deberías ver alertas sobre tus gastos
+5. Deberías ver alertas sobre tus gastos
 
-#### 📊 TEST 2: Análisis Financiero
+#### TEST 2: Análisis Financiero
 1. Baja hasta ver el **Panel de IA** (card morado después del Balance)
 2. Click en **"Analizar mis finanzas"**
 3. Espera 5-10 segundos
-4. ✅ Deberías ver:
+4. Deberías ver:
    - Score de salud financiera (0-100)
    - 3 patrones detectados
    - 3 recomendaciones personalizadas
 
-#### 📈 TEST 3: Predicciones
+#### TEST 3: Predicciones
 1. Baja hasta el **Gráfico de Predicciones** (después del gráfico de tendencias)
 2. Si tienes menos de 2 meses de datos, NO aparecerá (esto es normal)
 3. Para probarlo: agrega transacciones con fechas del mes pasado
 4. Click en **"Generar predicción"**
-5. ✅ Deberías ver:
+5. Deberías ver:
    - Línea punteada con predicción del próximo mes
    - Área sombreada (rango de confianza)
    - Cards con predicción por categoría
 
 ---
 
-## 📸 LO QUE DEBERÍAS VER
+## LO QUE DEBERÍAS VER
 
 ### Header con AIAlerts
 ```
 ┌────────────────────────────────────────────────────────┐
-│  Calculadora de Presupuesto Personal          🔔 👤    │
-│  Gestiona tus finanzas con IA                 ↑  ↑    │
-│                                             (new)(tú)  │
+│  Calculadora de Presupuesto Personal       [BELL] [U]  │
+│  Gestiona tus finanzas con IA                          │
+│                                                         │
 └────────────────────────────────────────────────────────┘
 ```
 
 ### Panel de Análisis
 ```
 ┌────────────────────────────────────────────────────────┐
-│ 🤖 Análisis Financiero con IA                          │
+│ Análisis Financiero con IA                             │
 │                                                         │
-│ [Analizar mis finanzas] ← Click aquí                   │
+│ [Analizar mis finanzas] <- Click aquí                  │
 │                                                         │
 │ Después del análisis verás:                            │
 │ • Score: 75/100 (Salud financiera buena)              │
@@ -109,28 +109,28 @@ Para que la IA funcione bien, necesitas datos. Agrega al menos:
 
 ---
 
-## ⚠️ PROBLEMAS COMUNES
+## PROBLEMAS COMUNES
 
-### ❌ "Failed to fetch" o error 401
+### "Failed to fetch" o error 401
 **Causa:** API key inválida o no cargada  
 **Solución:**
 1. Verifica que `.env` tenga la key correcta
 2. Reinicia el servidor (Ctrl+C y luego `npm run dev`)
 3. Refresca el navegador (F5)
 
-### ❌ "No se puede cargar el módulo"
+### "No se puede cargar el módulo"
 **Causa:** Imports incorrectos  
 **Solución:**
 1. Verifica que exista `src/components/AI/index.js`
 2. Reinicia el servidor
 
-### ❌ No veo el panel de IA
+### No veo el panel de IA
 **Causa:** No has hecho scroll o no tienes transacciones  
 **Solución:**
 1. Agrega al menos 5 transacciones
 2. Baja (scroll) hasta después del BalanceCard
 
-### ❌ El gráfico de predicciones no aparece
+### El gráfico de predicciones no aparece
 **Causa:** Necesitas datos de 2+ meses  
 **Solución:**
 1. Agrega transacciones con fechas del mes pasado:
@@ -139,9 +139,9 @@ Para que la IA funcione bien, necesitas datos. Agrega al menos:
 
 ---
 
-## 🔐 IMPORTANTE SOBRE SEGURIDAD
+## IMPORTANTE SOBRE SEGURIDAD
 
-⚠️ **TU API KEY SE COMPARTIÓ PÚBLICAMENTE EN GITHUB COPILOT CHAT**
+**TU API KEY SE COMPARTIÓ PÚBLICAMENTE EN GITHUB COPILOT CHAT**
 
 **Acción requerida:**
 1. Ve a https://console.anthropic.com/settings/keys
@@ -152,14 +152,14 @@ Para que la IA funcione bien, necesitas datos. Agrega al menos:
 6. Reinicia el servidor
 
 **Nunca compartas tu API key:**
-- ❌ No la pongas en mensajes de chat
-- ❌ No la subas a GitHub
-- ❌ No la compartas en Discord/Slack
-- ✅ Solo en archivo `.env` (que ya está en `.gitignore`)
+- No la pongas en mensajes de chat
+- No la subas a GitHub
+- No la compartas en Discord/Slack
+- Solo en archivo `.env` (que ya está en `.gitignore`)
 
 ---
 
-## 💰 COSTOS ESTIMADOS
+## COSTOS ESTIMADOS
 
 Con tu nivel de uso típico (~10 transacciones/día):
 - **Análisis financiero:** 4/mes = $0.048
@@ -171,7 +171,7 @@ Con tu nivel de uso típico (~10 transacciones/día):
 
 ---
 
-## 📊 VERIFICACIÓN RÁPIDA
+## VERIFICACIÓN RÁPIDA
 
 Abre la **consola del navegador** (F12) y ejecuta:
 
@@ -185,7 +185,7 @@ console.log('API Key:', import.meta.env.VITE_ANTHROPIC_API_KEY?.substring(0, 20)
 
 ---
 
-## ✅ CHECKLIST DE ÉXITO
+## CHECKLIST DE ÉXITO
 
 Marca cuando completes cada paso:
 
@@ -200,19 +200,19 @@ Marca cuando completes cada paso:
 
 ---
 
-## 🎓 LO QUE ACABAS DE APRENDER
+## LO QUE ACABAS DE APRENDER
 
-1. ✅ Configuración de variables de entorno (`.env`)
-2. ✅ Integración de APIs de IA (Anthropic Claude)
-3. ✅ Custom React hooks para gestión de estado
-4. ✅ Componentes especializados con loading states
-5. ✅ Preparación de datos para machine learning
-6. ✅ Manejo de errores y fallbacks
-7. ✅ Optimización de costos con caché
+1. Configuración de variables de entorno (`.env`)
+2. Integración de APIs de IA (Anthropic Claude)
+3. Custom React hooks para gestión de estado
+4. Componentes especializados con loading states
+5. Preparación de datos para machine learning
+6. Manejo de errores y fallbacks
+7. Optimización de costos con caché
 
 ---
 
-## 📞 PRÓXIMA SESIÓN (OPCIONAL)
+## PRÓXIMA SESIÓN (OPCIONAL)
 
 Si quieres seguir mejorando:
 
@@ -228,13 +228,13 @@ Si quieres seguir mejorando:
 
 ---
 
-## 🚀 ¡PRUEBA TU APP AHORA!
+## PRUEBA TU APP AHORA
 
 1. Ve a http://localhost:5174/
 2. Inicia sesión
 3. Agrega transacciones
 4. Click en "Analizar mis finanzas"
-5. ¡Disfruta tu calculadora con IA! 🤖💰
+5. Disfruta tu calculadora con IA
 
 ---
 
