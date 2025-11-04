@@ -9,7 +9,13 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "build:analyze": "vite build && npx vite-bundle-visualizer",
+    "build:prod": "NODE_ENV=production vite build",
+    "serve": "vite preview --port 4173",
+    "clean": "rm -rf dist node_modules/.vite",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{js,jsx,json,md}\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.78.0",
