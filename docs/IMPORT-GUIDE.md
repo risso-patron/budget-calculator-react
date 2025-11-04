@@ -10,6 +10,28 @@ Tu archivo CSV debe tener estas columnas en la **primera fila** (headers):
 tipo,descripcion,monto,fecha,categoria
 ```
 
+#### ✨ NUEVO: Orden Flexible de Columnas
+
+**¡Ya NO necesitas ordenar tus columnas!** El importador detecta automáticamente dónde está cada columna por su nombre.
+
+**✅ Todos estos formatos funcionan:**
+
+```csv
+# Orden original:
+tipo,descripcion,monto,fecha,categoria
+
+# Orden invertido:
+categoria,fecha,monto,descripcion,tipo
+
+# Orden personalizado (como tu Excel):
+fecha,tipo,monto,descripcion,categoria
+
+# Sin categoría (opcional):
+tipo,descripcion,monto,fecha
+```
+
+**🎯 Regla simple:** Mientras el CSV tenga las columnas requeridas (tipo, descripcion, monto, fecha), ¡el orden NO importa!
+
 #### Descripción de columnas:
 
 | Columna | Requerida | Valores aceptados | Ejemplo |
@@ -39,12 +61,7 @@ tipo,descripcion,monto,fecha,categoria
 #### Opción A: Desde Excel (Windows)
 
 1. Abre tu archivo Excel con los gastos
-2. **Organiza las columnas** según el formato requerido:
-   - Columna A: tipo (ingreso/gasto)
-   - Columna B: descripcion
-   - Columna C: monto
-   - Columna D: fecha
-   - Columna E: categoria (opcional)
+2. **YA NO necesitas reordenar las columnas** - El importador las detecta automáticamente
 3. Haz clic en **Archivo → Guardar como**
 4. Selecciona **Tipo de archivo**: `CSV (delimitado por comas) (*.csv)`
 5. Guarda el archivo

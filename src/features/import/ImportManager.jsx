@@ -56,23 +56,34 @@ export default function ImportManager({ onImport }) {
     // Primera línea = headers
     // Limpiar caracteres especiales, tildes, espacios extras y convertir a minúsculas
     const rawHeaders = lines[0].split(',').map(h => h.trim());
-    const headers = rawHeaders.map(h => 
+    const normalizedHeaders = rawHeaders.map(h => 
       h.toLowerCase()
        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Eliminar tildes
        .replace(/[^\w\s]/g, '') // Eliminar caracteres especiales excepto espacios
        .trim()
     );
     
-    console.log('Headers detectados:', headers);
+    console.log('Headers detectados:', normalizedHeaders);
     console.log('Headers originales:', rawHeaders);
     
     // Validar headers requeridos (sin tildes para comparación)
     const requiredHeaders = ['tipo', 'descripcion', 'monto', 'fecha'];
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+    const missingHeaders = requiredHeaders.filter(h => !normalizedHeaders.includes(h));
     if (missingHeaders.length > 0) {
       // Mostrar headers detectados para debugging
-      throw new Error(`Faltan columnas requeridas: ${missingHeaders.join(', ')}. Detectadas: ${headers.join(', ')}`);
+      throw new Error(`Faltan columnas requeridas: ${missingHeaders.join(', ')}. Detectadas: ${normalizedHeaders.join(', ')}`);
     }
+
+    // 🔥 CREAR MAPA DE ÍNDICES POR NOMBRE DE COLUMNA
+    // Esto permite que las columnas estén en cualquier orden
+    const columnIndexMap = {};
+    normalizedHeaders.forEach((header, idx) => {
+      columnIndexMap[header] = idx;
+    });
+    
+    console.log('Mapa de columnas:', columnIndexMap);
+    // Ejemplo: { tipo: 0, descripcion: 1, monto: 2, fecha: 3, categoria: 4 }
+    // O si están desordenadas: { fecha: 0, tipo: 1, descripcion: 2, categoria: 3, monto: 4 }
 
     // Parsear filas
     const data = [];
@@ -82,10 +93,14 @@ export default function ImportManager({ onImport }) {
       // Permitir filas con menos columnas (categoría opcional)
       if (values.length < 4) continue; // Al menos tipo, descripcion, monto, fecha
       
-      const row = {};
-      headers.forEach((header, idx) => {
-        row[header] = values[idx] || '';
-      });
+      // 🔥 MAPEAR VALORES POR NOMBRE DE COLUMNA (no por índice)
+      const row = {
+        tipo: values[columnIndexMap['tipo']] || '',
+        descripcion: values[columnIndexMap['descripcion']] || '',
+        monto: values[columnIndexMap['monto']] || '',
+        fecha: values[columnIndexMap['fecha']] || '',
+        categoria: columnIndexMap['categoria'] !== undefined ? values[columnIndexMap['categoria']] || '' : '',
+      };
 
       // Validar fila
       const validation = validateRow(row);
@@ -228,6 +243,7 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
         </h4>
         <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
           <li>• Primera línea: <code className="bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded">tipo,descripcion,monto,fecha,categoria</code></li>
+          <li>• <strong>Las columnas pueden estar en cualquier orden</strong> - se detectan por nombre</li>
           <li>• Tipo: "ingreso" o "gasto" (minúsculas)</li>
           <li>• Fecha: YYYY-MM-DD o DD/MM/YYYY</li>
           <li>• Monto: número positivo (usar punto para decimales)</li>
