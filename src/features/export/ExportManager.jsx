@@ -1,14 +1,19 @@
 import PropTypes from 'prop-types';
-import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Card } from '../../components/Shared/Card';
 import { Button } from '../../components/Shared/Button';
 import { exportToCSV, exportToPDF } from './exportUtils';
+import { useSubscription } from '../../hooks/useSubscription';
+import { UpgradeModal } from '../../components/Subscription/UpgradeModal';
 
 /**
  * Componente para exportar datos a CSV/PDF
  */
-export const ExportManager = ({ incomes, expenses, categoryAnalysis, totalIncome, totalExpenses, balance }) => {
+export const ExportManager = ({ incomes, expenses, categoryAnalysis }) => {
+  const { hasFeature } = useSubscription();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [blockedFeature, setBlockedFeature] = useState(null);
+  
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0],
@@ -27,6 +32,13 @@ export const ExportManager = ({ incomes, expenses, categoryAnalysis, totalIncome
   };
 
   const handleExportCSV = async () => {
+    // Feature gate: Solo PRO puede exportar
+    if (!hasFeature('export_csv')) {
+      setBlockedFeature('export_csv');
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setExporting(true);
     try {
       const filteredIncomes = filterByDateRange(incomes);
@@ -42,6 +54,13 @@ export const ExportManager = ({ incomes, expenses, categoryAnalysis, totalIncome
   };
 
   const handleExportPDF = async () => {
+    // Feature gate: Solo PRO puede exportar
+    if (!hasFeature('export_pdf')) {
+      setBlockedFeature('export_pdf');
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setExporting(true);
     try {
       const filteredIncomes = filterByDateRange(incomes);
@@ -132,7 +151,7 @@ export const ExportManager = ({ incomes, expenses, categoryAnalysis, totalIncome
 
         {/* Botones de exportación */}
         <div className="grid grid-cols-2 gap-3">
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <div>
             <Button
               onClick={handleExportCSV}
               disabled={exporting || filteredCount === 0}
@@ -149,9 +168,9 @@ export const ExportManager = ({ incomes, expenses, categoryAnalysis, totalIncome
                 </span>
               )}
             </Button>
-          </motion.div>
+          </div>
 
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <div>
             <Button
               onClick={handleExportPDF}
               disabled={exporting || filteredCount === 0}
@@ -168,7 +187,7 @@ export const ExportManager = ({ incomes, expenses, categoryAnalysis, totalIncome
                 </span>
               )}
             </Button>
-          </motion.div>
+          </div>
         </div>
 
         {/* Formatos soportados */}
@@ -180,8 +199,43 @@ export const ExportManager = ({ incomes, expenses, categoryAnalysis, totalIncome
             <li>• <strong>CSV:</strong> Archivo de Excel con todas las transacciones</li>
             <li>• <strong>PDF:</strong> Reporte profesional con resumen y gráficos</li>
           </ul>
+          
+          {/* Badge PRO si no tiene acceso */}
+          {!hasFeature('export_csv') && (
+            <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🔒</span>
+                  <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                    Función PRO
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setBlockedFeature('export_csv');
+                    setShowUpgradeModal(true);
+                  }}
+                  className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-full font-semibold transition-colors"
+                >
+                  Actualizar
+                </button>
+              </div>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                Exporta tus datos con el plan PRO desde $4.99/mes
+              </p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Modal de Upgrade */}
+      {showUpgradeModal && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          feature={blockedFeature}
+        />
+      )}
     </Card>
   );
 };

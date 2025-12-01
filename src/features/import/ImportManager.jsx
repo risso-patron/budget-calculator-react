@@ -48,14 +48,46 @@ export default function ImportManager({ onImport }) {
     // Reemplazar diferentes tipos de saltos de línea
     cleanText = cleanText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     
+    // Parser CSV mejorado que maneja comillas
+    const parseCSVLine = (line) => {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            // Comilla escapada ""
+            current += '"';
+            i++; // Saltar la siguiente comilla
+          } else {
+            // Toggle estado de comillas
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          // Fin de campo
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      // Agregar el último campo
+      result.push(current.trim());
+      return result;
+    };
+    
     const lines = cleanText.split('\n').filter(line => line.trim());
     if (lines.length < 2) {
       throw new Error('El archivo debe tener al menos una fila de datos');
     }
 
     // Primera línea = headers
-    // Limpiar caracteres especiales, tildes, espacios extras y convertir a minúsculas
-    const rawHeaders = lines[0].split(',').map(h => h.trim());
+    const rawHeaders = parseCSVLine(lines[0]);
     const normalizedHeaders = rawHeaders.map(h => 
       h.toLowerCase()
        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Eliminar tildes
@@ -70,31 +102,29 @@ export default function ImportManager({ onImport }) {
     const requiredHeaders = ['tipo', 'descripcion', 'monto', 'fecha'];
     const missingHeaders = requiredHeaders.filter(h => !normalizedHeaders.includes(h));
     if (missingHeaders.length > 0) {
-      // Mostrar headers detectados para debugging
       throw new Error(`Faltan columnas requeridas: ${missingHeaders.join(', ')}. Detectadas: ${normalizedHeaders.join(', ')}`);
     }
 
     // 🔥 CREAR MAPA DE ÍNDICES POR NOMBRE DE COLUMNA
-    // Esto permite que las columnas estén en cualquier orden
     const columnIndexMap = {};
     normalizedHeaders.forEach((header, idx) => {
       columnIndexMap[header] = idx;
     });
     
     console.log('Mapa de columnas:', columnIndexMap);
-    // Ejemplo: { tipo: 0, descripcion: 1, monto: 2, fecha: 3, categoria: 4 }
-    // O si están desordenadas: { fecha: 0, tipo: 1, descripcion: 2, categoria: 3, monto: 4 }
 
     // Parsear filas
     const data = [];
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
+      const values = parseCSVLine(lines[i]);
       
       // Permitir filas con menos columnas (categoría opcional)
-      if (values.length < 4) continue; // Al menos tipo, descripcion, monto, fecha
+      if (values.length < 4) {
+        console.warn(`Fila ${i + 1} omitida: menos de 4 columnas`);
+        continue;
+      }
       
-      // 🔥 MAPEAR VALORES POR NOMBRE DE COLUMNA (no por índice)
-      // Normalizar valores: minúsculas y trim
+      // 🔥 MAPEAR VALORES POR NOMBRE DE COLUMNA
       let fecha = (values[columnIndexMap['fecha']] || '').trim();
       
       // Normalizar formato de fecha: 3/11/2025 → 03/11/2025
@@ -117,6 +147,8 @@ export default function ImportManager({ onImport }) {
         fecha: fecha,
         categoria: columnIndexMap['categoria'] !== undefined ? (values[columnIndexMap['categoria']] || '').trim() : '',
       };
+
+      console.log(`Fila ${i + 1}:`, row);
 
       // Validar fila
       const validation = validateRow(row);

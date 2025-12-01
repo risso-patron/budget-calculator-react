@@ -124,9 +124,7 @@ export const RegisterForm = ({ onToggleForm }) => {
         </div>
 
         {error && (
-          <Alert type="error" className="mb-6">
-            {error}
-          </Alert>
+          <Alert type="error" message={error} className="mb-6" />
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">

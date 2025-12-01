@@ -51,8 +51,9 @@ const checkRateLimit = (userId) => {
  * Cliente genérico para llamar a Claude API
  */
 const callClaude = async (messages, maxTokens = 2000, useCache = true) => {
-  if (!API_KEY || API_KEY === 'sk-ant-api03-...') {
-    throw new Error('API Key de Anthropic no configurada. Agrega VITE_ANTHROPIC_API_KEY a tu archivo .env')
+  if (!API_KEY || API_KEY === 'your_anthropic_api_key_here') {
+    console.warn('⚠️ API Key de Anthropic no configurada. Las funciones de IA no estarán disponibles.')
+    return { error: 'API Key no configurada' }
   }
 
   // Generar clave de caché basada en el contenido del mensaje

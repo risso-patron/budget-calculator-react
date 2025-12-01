@@ -1,4 +1,72 @@
 import { supabase } from '../lib/supabase'
+import { STORAGE_KEYS, TRANSACTION_TYPES } from '../constants/categories'
+
+const LEGACY_STORAGE_KEY = 'budget-calculator-transactions'
+const MIGRATION_STATUS_KEY = 'budget-calculator-migrated'
+const BACKUP_PREFIX = 'budget-calculator-backup'
+const COMPLETED_VALUES = new Set(['true', 'skip', 'completed'])
+
+const canUseStorage = () =>
+  typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+
+const readArrayFromStorage = (key) => {
+  if (!canUseStorage()) return []
+  try {
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch (error) {
+    console.warn(`Error al leer localStorage key "${key}":`, error)
+    return []
+  }
+}
+
+const normalizeTransaction = (tx, fallbackType) => ({
+  ...tx,
+  type: tx.type || fallbackType,
+})
+
+const toISODate = (value) => {
+  const candidate = value ? new Date(value) : null
+  if (candidate && !Number.isNaN(candidate.getTime())) {
+    return candidate.toISOString().split('T')[0]
+  }
+  return new Date().toISOString().split('T')[0]
+}
+
+/**
+ * Obtiene todas las transacciones almacenadas localmente (ingresos, gastos y legacy)
+ */
+export function getLocalTransactionsSnapshot() {
+  if (!canUseStorage()) return []
+
+  const incomes = readArrayFromStorage(STORAGE_KEYS.INCOMES).map(tx => ({
+    ...normalizeTransaction(tx, TRANSACTION_TYPES.INCOME),
+    category: tx.category ?? null,
+  }))
+
+  const expenses = readArrayFromStorage(STORAGE_KEYS.EXPENSES).map(tx =>
+    normalizeTransaction(tx, TRANSACTION_TYPES.EXPENSE)
+  )
+
+  const legacy = readArrayFromStorage(LEGACY_STORAGE_KEY).map(tx =>
+    normalizeTransaction(
+      tx,
+      tx.category ? TRANSACTION_TYPES.EXPENSE : TRANSACTION_TYPES.INCOME
+    )
+  )
+
+  const deduped = new Map()
+  ;[...legacy, ...incomes, ...expenses].forEach(tx => {
+    const key = tx.id ?? `${tx.type}-${tx.description}-${tx.amount}-${tx.date}`
+    if (!deduped.has(key)) {
+      deduped.set(key, tx)
+    }
+  })
+
+  return Array.from(deduped.values())
+}
 
 /**
  * Migra datos de localStorage a Supabase para un usuario autenticado
@@ -6,9 +74,8 @@ import { supabase } from '../lib/supabase'
  */
 export async function migrateFromLocalStorage() {
   try {
-    // Verificar que el usuario esté autenticado
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     if (!user) {
       return {
         success: false,
@@ -17,19 +84,8 @@ export async function migrateFromLocalStorage() {
       }
     }
 
-    // Obtener datos de localStorage
-    const localData = localStorage.getItem('budget-calculator-transactions')
-    
-    if (!localData) {
-      return {
-        success: true,
-        migratedCount: 0,
-        error: null
-      }
-    }
+    const transactions = getLocalTransactionsSnapshot()
 
-    const transactions = JSON.parse(localData)
-    
     if (!Array.isArray(transactions) || transactions.length === 0) {
       return {
         success: true,
@@ -38,21 +94,33 @@ export async function migrateFromLocalStorage() {
       }
     }
 
-    console.log(`Migrando ${transactions.length} transacciones a Supabase...`)
+    const validTransactions = transactions
+      .map(tx => ({
+        ...tx,
+        amount: parseFloat(tx.amount),
+        description: (tx.description || '').trim(),
+      }))
+      .filter(tx => tx.description && !Number.isNaN(tx.amount))
 
-    // Transformar transacciones al formato de Supabase
-    const transactionsToInsert = transactions.map(tx => ({
-      id: tx.id, // Mantener el mismo ID si existe
+    if (validTransactions.length === 0) {
+      return {
+        success: true,
+        migratedCount: 0,
+        error: null
+      }
+    }
+
+    const transactionsToInsert = validTransactions.map(tx => ({
+      id: tx.id,
       user_id: user.id,
       description: tx.description,
-      amount: parseFloat(tx.amount),
-      category: tx.category,
-      type: tx.type,
-      date: tx.date || new Date().toISOString()
+      amount: tx.amount,
+      category: tx.category || null,
+      type: tx.type || (tx.category ? TRANSACTION_TYPES.EXPENSE : TRANSACTION_TYPES.INCOME),
+      date: toISODate(tx.date),
     }))
 
-    // Insertar en Supabase (usando upsert para evitar duplicados)
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('transactions')
       .upsert(transactionsToInsert, {
         onConflict: 'id',
@@ -68,26 +136,18 @@ export async function migrateFromLocalStorage() {
       }
     }
 
-    console.log(`Migradas ${transactionsToInsert.length} transacciones exitosamente`)
+    const backupKey = `${BACKUP_PREFIX}-${Date.now()}`
+    window.localStorage.setItem(backupKey, JSON.stringify(transactionsToInsert))
 
-    // Hacer backup del localStorage antes de limpiar
-    const backupKey = `budget-calculator-backup-${new Date().getTime()}`
-    localStorage.setItem(backupKey, localData)
-
-    // Limpiar localStorage (opcional, comentado por seguridad)
-    // localStorage.removeItem('budget-calculator-transactions')
-    
-    // Marcar la migración como completada
-    localStorage.setItem('budget-calculator-migrated', 'true')
+    window.localStorage.setItem(MIGRATION_STATUS_KEY, 'true')
 
     return {
       success: true,
       migratedCount: transactionsToInsert.length,
       error: null
     }
-
   } catch (error) {
-    console.error('Error durante la migración:', error)
+    console.error('Error durante la migraci��n:', error)
     return {
       success: false,
       migratedCount: 0,
@@ -97,48 +157,34 @@ export async function migrateFromLocalStorage() {
 }
 
 /**
- * Verifica si ya se realizó la migración
- * @returns {boolean}
+ * Verifica si ya se realiz�� (o se omiti��) la migraci��n
  */
 export function hasMigrated() {
-  return localStorage.getItem('budget-calculator-migrated') === 'true'
+  if (!canUseStorage()) return true
+  const status = window.localStorage.getItem(MIGRATION_STATUS_KEY)
+  return status ? COMPLETED_VALUES.has(status) : false
 }
 
 /**
  * Verifica si hay datos en localStorage pendientes de migrar
- * @returns {boolean}
  */
 export function hasPendingMigration() {
-  const localData = localStorage.getItem('budget-calculator-transactions')
-  if (!localData) return false
-  
-  try {
-    const transactions = JSON.parse(localData)
-    return Array.isArray(transactions) && transactions.length > 0 && !hasMigrated()
-  } catch {
-    return false
-  }
+  if (!canUseStorage()) return false
+  return !hasMigrated() && getLocalTransactionsSnapshot().length > 0
 }
 
 /**
  * Obtiene el conteo de transacciones pendientes de migrar
- * @returns {number}
  */
 export function getPendingMigrationCount() {
-  const localData = localStorage.getItem('budget-calculator-transactions')
-  if (!localData) return 0
-  
-  try {
-    const transactions = JSON.parse(localData)
-    return Array.isArray(transactions) ? transactions.length : 0
-  } catch {
-    return 0
-  }
+  if (!canUseStorage() || hasMigrated()) return 0
+  return getLocalTransactionsSnapshot().length
 }
 
 /**
- * Resetea el estado de migración (útil para testing)
+ * Resetea el estado de migraci��n (ǧtil para testing)
  */
 export function resetMigrationStatus() {
-  localStorage.removeItem('budget-calculator-migrated')
+  if (!canUseStorage()) return
+  window.localStorage.removeItem(MIGRATION_STATUS_KEY)
 }

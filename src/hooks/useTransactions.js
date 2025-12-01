@@ -17,9 +17,14 @@ export const useTransactions = () => {
   const [alert, setAlert] = useState(null); // { type: 'success'|'error', message: string }
 
   /**
-   * Muestra una alerta temporal
+   * Muestra una alerta temporal. Si no se pasa tipo, limpia la alerta.
    */
   const showAlert = useCallback((type, message) => {
+    if (!type) {
+      setAlert(null);
+      return;
+    }
+
     setAlert({ type, message });
     setTimeout(() => setAlert(null), 3000);
   }, []);

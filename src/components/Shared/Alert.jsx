@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 /**
  * Componente Alert para mostrar mensajes de éxito/error
  */
-export const Alert = ({ type = 'success', message, onClose }) => {
+export const Alert = ({ type = 'success', message, onClose, className = '', children }) => {
   useEffect(() => {
     if (onClose) {
       const timer = setTimeout(onClose, 3000);
@@ -24,13 +24,15 @@ export const Alert = ({ type = 'success', message, onClose }) => {
     info: '',
   };
 
-  if (!message) return null;
+  const content = message ?? children;
+
+  if (!content) return null;
 
   return (
-    <div className={`fixed top-4 right-4 z-50 animate-fade-in`}>
+    <div className={`fixed top-4 right-4 z-50 animate-fade-in ${className}`}>
       <div className={`${styles[type]} border-l-4 p-4 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px] max-w-md`}>
         <span className="text-xl font-bold">{icons[type]}</span>
-        <p className="flex-1 font-medium">{message}</p>
+        <p className="flex-1 font-medium">{content}</p>
         {onClose && (
           <button
             onClick={onClose}
@@ -49,4 +51,6 @@ Alert.propTypes = {
   type: PropTypes.oneOf(['success', 'error', 'info']),
   message: PropTypes.string,
   onClose: PropTypes.func,
+  className: PropTypes.string,
+  children: PropTypes.node,
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { migrationUtils } from '../utils/migrationUtils'
+import { migrationUtils } from '../../utils/migrationUtils'
 import { useAuth } from '../contexts/AuthContext'
 import { Alert } from '../components/Shared/Alert'
 
@@ -99,9 +99,7 @@ export const MigrationPrompt = ({ onComplete }) => {
         </div>
 
         {error && (
-          <Alert type="error" className="mb-4">
-            {error}
-          </Alert>
+          <Alert type="error" message={error} className="mb-4" />
         )}
 
         <div className="space-y-3">

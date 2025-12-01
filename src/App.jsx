@@ -18,9 +18,9 @@ import { BalanceDonutChart } from './components/Charts/BalanceDonutChart';
 import { TrendLineChart } from './components/Charts/TrendLineChart';
 import { CategoryBarChart } from './components/Charts/CategoryBarChart';
 import { ComparativeChart } from './components/Charts/ComparativeChart';
-// COMPONENTES DE IA - TEMPORALMENTE DESHABILITADOS
-// import { AIInsightsPanel, AIAlerts, PredictiveChart } from './components/AI';
-// import { useAIInsights } from './hooks/useAIInsights';
+// COMPONENTES DE IA - HABILITADOS
+import { AIInsightsPanel, AIAlerts, PredictiveChart } from './components/AI';
+import { useAIInsights } from './hooks/useAIInsights';
 // FEATURES PREMIUM
 import { GoalManager } from './features/goals/GoalManager';
 import { ExportManager } from './features/export/ExportManager';
@@ -56,10 +56,19 @@ function AppContent() {
   // Hook de gamificación
   const achievements = useAchievements();
 
+  // Combinar todas las transacciones para IA
+  const allTransactions = [
+    ...incomes.map(income => ({ ...income, type: 'income' })),
+    ...expenses.map(expense => ({ ...expense, type: 'expense' }))
+  ];
+
+  // Hook de IA para análisis financiero
+  const aiInsights = useAIInsights(allTransactions);
+
   // Funciones para tarjetas de crédito
   const handleAddCard = (card) => {
     setCreditCards([...creditCards, card]);
-    showAlert(`Tarjeta "${card.name}" agregada exitosamente`, 'success');
+    showAlert('success', `Tarjeta "${card.name}" agregada exitosamente`);
     return true;
   };
 
@@ -71,13 +80,13 @@ function AppContent() {
 
   const handleRemoveCard = (cardId) => {
     setCreditCards(creditCards.filter(card => card.id !== cardId));
-    showAlert('Tarjeta eliminada', 'success');
+    showAlert('success', 'Tarjeta eliminada');
   };
 
   // Funciones para metas financieras
   const handleAddGoal = (goal) => {
     setGoals([...goals, goal]);
-    showAlert(`Meta "${goal.name}" creada exitosamente`, 'success');
+    showAlert('success', `Meta "${goal.name}" creada exitosamente`);
     return true;
   };
 
@@ -90,7 +99,7 @@ function AppContent() {
   const handleDeleteGoal = (goalId) => {
     if (window.confirm('¿Estás seguro de eliminar esta meta?')) {
       setGoals(goals.filter(goal => goal.id !== goalId));
-      showAlert('Meta eliminada', 'success');
+      showAlert('success', 'Meta eliminada');
     }
   };
 
@@ -113,16 +122,41 @@ function AppContent() {
 
   // Handler para importación CSV
   const handleImportTransaction = async (type, data) => {
-    if (type === 'income') {
-      return handleAddIncome(data.description, data.amount, data.date);
-    } else {
-      return handleAddExpense(data.description, data.category, data.amount, data.date);
+    try {
+      if (type === 'income') {
+        const result = handleAddIncome(data.description, data.amount, data.date);
+        if (!result) {
+          throw new Error('Error al agregar ingreso');
+        }
+        return result;
+      } else {
+        const result = handleAddExpense(data.description, data.category, data.amount, data.date);
+        if (!result) {
+          throw new Error('Error al agregar gasto');
+        }
+        return result;
+      }
+    } catch (error) {
+      console.error('Error en handleImportTransaction:', error);
+      throw error;
+    }
+  };
+
+  // Handler para limpiar todas las transacciones
+  const handleClearAllTransactions = () => {
+    if (window.confirm('⚠️ ¿Estás seguro de eliminar TODAS las transacciones? Esta acción no se puede deshacer.')) {
+      // Limpiar localStorage directamente
+      localStorage.removeItem('budget-app-incomes');
+      localStorage.removeItem('budget-app-expenses');
+      
+      // Recargar la página para reflejar los cambios
+      window.location.reload();
     }
   };
 
   // HOOK DE IA - Combinar todas las transacciones
   // TEMPORALMENTE DESHABILITADO - Necesita VITE_ANTHROPIC_API_KEY
-  /*
+  /*+
   const allTransactions = useMemo(() => {
     return [
       ...incomes.map(t => ({ ...t, type: 'income' })),
@@ -203,7 +237,7 @@ function AppContent() {
         <MigrationDialog
           onClose={() => setShowMigration(false)}
           onComplete={(count) => {
-            showAlert(`${count} transacciones migradas exitosamente`, 'success');
+            showAlert('success', `${count} transacciones migradas exitosamente`);
             setShowMigration(false);
             window.location.reload();
           }}
@@ -240,6 +274,18 @@ function AppContent() {
               <p className="text-lg opacity-90">
                 Gestiona tus finanzas personales de manera inteligente con IA
               </p>
+              {/* DEBUG: Contador de transacciones */}
+              <div className="mt-2 flex gap-3 text-sm">
+                <span className="px-3 py-1 bg-green-500/20 text-green-100 rounded-full">
+                  💰 {incomes.length} ingresos
+                </span>
+                <span className="px-3 py-1 bg-red-500/20 text-red-100 rounded-full">
+                  💳 {expenses.length} gastos
+                </span>
+                <span className="px-3 py-1 bg-blue-500/20 text-blue-100 rounded-full">
+                  📊 {incomes.length + expenses.length} total
+                </span>
+              </div>
             </div>
             <div className="ml-4 flex items-center gap-4">
               {/* Toggle Dark Mode */}
@@ -268,14 +314,12 @@ function AppContent() {
           />
 
           {/* ✅ PANEL DE ANÁLISIS FINANCIERO CON IA */}
-          {/* TEMPORALMENTE DESHABILITADO - Necesita VITE_ANTHROPIC_API_KEY
           <AIInsightsPanel
             analysis={aiInsights.analysis}
             loading={aiInsights.analyzing}
             error={aiInsights.analysisError}
             onAnalyze={() => aiInsights.runAnalysis({ totalIncome, totalExpenses, balance })}
           />
-          */}
 
           {/* FORMULARIOS PARA AGREGAR TRANSACCIONES */}
           <TransactionForm
@@ -290,6 +334,23 @@ function AppContent() {
             onRemoveIncome={removeIncome}
             onRemoveExpense={removeExpense}
           />
+
+          {/* BOTÓN PARA LIMPIAR TODAS LAS TRANSACCIONES */}
+          {(incomes.length > 0 || expenses.length > 0) && (
+            <div className="flex justify-center">
+              <button
+                onClick={handleClearAllTransactions}
+                className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg 
+                  shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 
+                  transition-all duration-200 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                🧹 Limpiar Todas las Transacciones ({incomes.length + expenses.length})
+              </button>
+            </div>
+          )}
 
           {/* GESTOR DE TARJETAS DE CRÉDITO */}
           <CreditCardManager
@@ -404,4 +465,3 @@ function App() {
 }
 
 export default App;
-
