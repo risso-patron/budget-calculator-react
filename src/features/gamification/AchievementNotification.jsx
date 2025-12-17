@@ -19,12 +19,13 @@ export const AchievementNotification = ({ achievement, onClose }) => {
       <div className="flex items-start gap-3">
         {/* Icono del logro con animación Simpson */}
         <div className="flex-shrink-0">
-          <WebPWithGlow
+          <span className="text-6xl">🏆</span>
+          {/* <WebPWithGlow
             src="/animations/Rocket.webp"
             alt="Logro"
             size="lg"
             glowColor="yellow"
-          />
+          /> */}
         </div>
         
         {/* Contenido */}

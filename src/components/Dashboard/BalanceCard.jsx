@@ -26,7 +26,8 @@ export const BalanceCard = ({ totalIncome, totalExpenses, balance, creditCardDeb
       
       <div className="flex items-center gap-3 mb-6">
         {realBalance > 500 ? (
-          <WebPWithGlow src="/animations/Homer.webp" alt="Homer" size="sm" glowColor="yellow" />
+          <span className="text-3xl">💰</span>
+          // <WebPWithGlow src="/animations/Homer.webp" alt="Homer" size="sm" glowColor="yellow" />
         ) : realBalance > 0 ? (
           <span className="text-2xl">💰</span>
         ) : (
