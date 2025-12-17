@@ -35,7 +35,7 @@ import AnimationsTest from './pages/AnimationsTest';
  * Componente principal de la aplicación con autenticación
  */
 function AppContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [showMigration, setShowMigration] = useState(false);
   const [creditCards, setCreditCards] = useState([]);
   const [goals, setGoals] = useState([]);

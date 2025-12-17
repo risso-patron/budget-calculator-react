@@ -47,11 +47,9 @@ LottieAnimation.propTypes = {
 
 /**
  * Animación de lluvia de dinero (Ingresos)
+ * Nota: Actualmente usando WebP en su lugar (ver WebPAnimation.jsx)
  */
 export const MoneyRainAnimation = ({ size = 150 }) => {
-  // URL de animación de LottieFiles (pública)
-  const animationUrl = 'https://lottie.host/85f9c5d7-6e4a-4b1e-9c8e-2d3f4a5b6c7d/8Kx9Yz1Abc.json';
-  
   return (
     <LottieAnimation
       animationData={null} // Se carga dinámicamente
