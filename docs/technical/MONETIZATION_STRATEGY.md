@@ -257,7 +257,7 @@ Usuarios gratuitos encontrarán fricción en:
 ## 📞 CONTACTO Y SOPORTE
 
 **Desarrollador**: Jorge Luis Risso Patrón  
-**GitHub**: [@Luisitorisso](https://github.com/Luisitorisso)  
+**GitHub**: [@risso-patron](https://github.com/risso-patron)  
 **Email**: luisrissopa@gmail.com  
 **Portfolio**: [jorge-luis-risso-patron-dev.netlify.app](https://jorge-luis-risso-patron-dev.netlify.app)
 
@@ -273,3 +273,4 @@ Uso comercial requiere permiso explícito.
 
 **Última actualización**: Octubre 2025  
 **Versión**: 1.0 - Monetización implementada
+

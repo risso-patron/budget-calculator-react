@@ -46,7 +46,7 @@
 
 1. **En VS Code, crea un archivo `.env` en la raíz del proyecto:**
    ```
-   c:\Users\luisr\Repo-de-desarrollo\Luisitorisso\budget-calculator-react\.env
+   E:\Dev\@Activos\budget-calculator-react\.env
    ```
 
 2. **Agrega este contenido (reemplaza con tus credenciales reales):**
@@ -197,3 +197,4 @@ Cuando despliegues a producción (Netlify, Vercel, etc.):
 
 **Vercel:**
 - Project Settings > Environment Variables
+

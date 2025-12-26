@@ -442,6 +442,7 @@ Se ha implementado un sistema completo de monetización con:
 
 ---
 
-**Desarrollador**: Jorge Luis Risso Patrón (@Luisitorisso)  
+**Desarrollador**: Jorge Luis Risso Patrón (@risso-patron)  
 **Fecha**: Octubre 2025  
 **Versión**: 1.0 - Sistema de Monetización Completo
+

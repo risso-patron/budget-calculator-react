@@ -11,7 +11,7 @@
 [![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-7.1-646CFF?logo=vite)](https://vitejs.dev)
 
-[🚀 Ver Demo](https://budget-calculator.netlify.app) · [📖 Documentación](./docs) · [🐛 Reportar Bug](https://github.com/Luisitorisso/budget-calculator-react/issues) · [💡 Solicitar Feature](https://github.com/Luisitorisso/budget-calculator-react/issues)
+[🚀 Ver Demo](https://budget-calculator.netlify.app) · [📖 Documentación](./docs) · [🐛 Reportar Bug](https://github.com/risso-patron/budget-calculator-react/issues) · [💡 Solicitar Feature](https://github.com/risso-patron/budget-calculator-react/issues)
 
 </div>
 
@@ -125,7 +125,7 @@
 
 1. **Clonar el repositorio**
 ```bash
-git clone https://github.com/Luisitorisso/budget-calculator-react.git
+git clone https://github.com/risso-patron/budget-calculator-react.git
 cd budget-calculator-react
 ```
 
@@ -384,7 +384,7 @@ Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para más detalles.
 
 ## 🐛 Issues Conocidos
 
-Ver [GitHub Issues](https://github.com/Luisitorisso/budget-calculator-react/issues) para bugs reportados y features solicitadas.
+Ver [GitHub Issues](https://github.com/risso-patron/budget-calculator-react/issues) para bugs reportados y features solicitadas.
 
 ---
 
@@ -398,9 +398,9 @@ Este proyecto está bajo la Licencia MIT - ver [LICENSE](./LICENSE) para detalle
 
 **Jorge Luis Risso Patrón**
 
-- 🌐 Website: [luisitorisso.github.io](https://luisitorisso.github.io/Luisitorisso/)
+- 🌐 Website: [risso-patron.github.io](https://risso-patron.github.io/risso-patron/)
 - 💼 LinkedIn: [linkedin.com/in/jorge-luis-risso-patron](https://www.linkedin.com/in/jorge-luis-risso-patron)
-- 🐙 GitHub: [@Luisitorisso](https://github.com/Luisitorisso)
+- 🐙 GitHub: [@risso-patron](https://github.com/risso-patron)
 - 📧 Email: luisrissopa@gmail.com
 - 📱 WhatsApp: [+507 6456-0263](https://wa.me/50764560263)
 - 📍 Ubicación: Ciudad de Panamá, Panamá 🇵🇦
@@ -431,3 +431,4 @@ Si este proyecto te fue útil, ¡dale una ⭐ en GitHub! Me ayuda a seguir mejor
 [⬆ Volver arriba](#-budget-calculator---gestión-inteligente-de-finanzas-personales)
 
 </div>
+

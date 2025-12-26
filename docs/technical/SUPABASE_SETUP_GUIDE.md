@@ -54,7 +54,7 @@ https://sb1-qsvwhqh5.supabase.co
 1. Crea un archivo `.env` en la raíz del proyecto:
 
 ```bash
-cd c:\Users\luisr\Repo-de-desarrollo\Luisitorisso\budget-calculator-react
+cd E:\Dev\@Activos\budget-calculator-react
 copy .env.example .env
 ```
 
@@ -185,3 +185,4 @@ Una vez configurado Supabase, usa la utilidad `migrateFromLocalStorage()` que se
 - Documentación de Supabase: https://supabase.com/docs
 - Documentación de RLS: https://supabase.com/docs/guides/auth/row-level-security
 - Cliente JS: https://supabase.com/docs/reference/javascript/introduction
+

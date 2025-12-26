@@ -568,6 +568,7 @@ Desde Stripe Dashboard → Payments → Click en pago → Refund.
 
 ---
 
-**Creado por:** Jorge Luis Risso Patrón (@Luisitorisso)
+**Creado por:** Jorge Luis Risso Patrón (@risso-patron)
 **Versión:** 1.0
 **Última actualización:** Octubre 2025
+

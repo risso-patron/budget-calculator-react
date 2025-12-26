@@ -684,7 +684,7 @@ if (!aiEnabled) {
 ### Contacto del Proyecto
 
 - **Desarrollador:** Jorge Luis Risso Patrón
-- **GitHub:** [@Luisitorisso](https://github.com/Luisitorisso)
+- **GitHub:** [@risso-patron](https://github.com/risso-patron)
 - **Email:** luisrissopa@gmail.com
 
 ---
@@ -707,3 +707,4 @@ MIT License - Ver archivo LICENSE para más detalles.
 **Última actualización:** Noviembre 2025  
 **Versión de Claude:** Sonnet 4 (claude-sonnet-4-20250514)  
 **Versión del documento:** 1.0
+

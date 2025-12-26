@@ -1,4 +1,4 @@
-# Budget Calculator - Gestión Inteligente de Finanzas Personales
+ # Budget Calculator - Gestión Inteligente de Finanzas Personales
 
 <div align="center">
 

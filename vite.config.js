@@ -39,10 +39,9 @@ export default defineConfig({
   
   // Server config para desarrollo
   server: {
-    port: 3000, // Puerto diferente para forzar cache refresh
+    port: 5174, // Cambiado temporalmente para evitar cache
     strictPort: false,
     open: true,
-    force: true, // Forzar optimización completa
   },
   
   // Preview config
