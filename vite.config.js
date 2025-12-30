@@ -7,14 +7,8 @@ export default defineConfig({
   
   // Optimizaciones de build
   build: {
-    // Minificación agresiva
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Eliminar console.log en producción
-        drop_debugger: true,
-      },
-    },
+    // Minificación más ligera para desarrollo
+    minify: 'esbuild',
     
     // Code splitting
     rollupOptions: {
@@ -46,8 +40,8 @@ export default defineConfig({
     // Tamaño de chunk warning
     chunkSizeWarningLimit: 1000,
     
-    // Source maps en producción (para debugging)
-    sourcemap: true,
+    // Source maps desactivados para build más rápido
+    sourcemap: false,
   },
   
   // Server config para desarrollo
@@ -65,14 +59,6 @@ export default defineConfig({
   
   // Optimización de dependencias
   optimizeDeps: {
-    include: ['react', 'react-dom', '@supabase/supabase-js'],
-    exclude: ['es-toolkit'],
-  },
-  
-  // Resolver problemas de CommonJS
-  resolve: {
-    alias: {
-      'es-toolkit': 'es-toolkit/dist/index.mjs'
-    }
+    include: ['react', 'react-dom', '@supabase/supabase-js', 'recharts'],
   },
 })
