@@ -19,13 +19,26 @@ export default defineConfig({
     // Code splitting
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id) {
           // Vendor chunks separados
-          'react-vendor': ['react', 'react-dom'],
-          'supabase': ['@supabase/supabase-js'],
-          'charts': ['recharts'],
-          'pdf': ['jspdf', 'jspdf-autotable'],
-          'utils': ['papaparse', 'react-confetti'],
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@supabase/supabase-js')) {
+              return 'supabase';
+            }
+            if (id.includes('recharts')) {
+              return 'charts';
+            }
+            if (id.includes('jspdf')) {
+              return 'pdf';
+            }
+            if (id.includes('papaparse') || id.includes('react-confetti')) {
+              return 'utils';
+            }
+            return 'vendor';
+          }
         },
       },
     },
@@ -53,5 +66,13 @@ export default defineConfig({
   // Optimización de dependencias
   optimizeDeps: {
     include: ['react', 'react-dom', '@supabase/supabase-js'],
+    exclude: ['es-toolkit'],
+  },
+  
+  // Resolver problemas de CommonJS
+  resolve: {
+    alias: {
+      'es-toolkit': 'es-toolkit/dist/index.mjs'
+    }
   },
 })
