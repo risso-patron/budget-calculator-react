@@ -7,41 +7,21 @@ export default defineConfig({
   
   // Optimizaciones de build
   build: {
-    // Minificación más ligera para desarrollo
+    // Minificación ligera
     minify: 'esbuild',
     
-    // Code splitting
+    // Tamaño de chunk warning
+    chunkSizeWarningLimit: 1500,
+    
+    // Source maps desactivados
+    sourcemap: false,
+    
+    // Rollup options simplificados
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          // Vendor chunks separados
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@supabase/supabase-js')) {
-              return 'supabase';
-            }
-            if (id.includes('recharts')) {
-              return 'charts';
-            }
-            if (id.includes('jspdf')) {
-              return 'pdf';
-            }
-            if (id.includes('papaparse') || id.includes('react-confetti')) {
-              return 'utils';
-            }
-            return 'vendor';
-          }
-        },
+        manualChunks: undefined, // Dejar que Vite lo maneje automáticamente
       },
     },
-    
-    // Tamaño de chunk warning
-    chunkSizeWarningLimit: 1000,
-    
-    // Source maps desactivados para build más rápido
-    sourcemap: false,
   },
   
   // Server config para desarrollo
@@ -59,6 +39,17 @@ export default defineConfig({
   
   // Optimización de dependencias
   optimizeDeps: {
-    include: ['react', 'react-dom', '@supabase/supabase-js', 'recharts'],
+    include: ['react', 'react-dom', '@supabase/supabase-js'],
+    exclude: ['es-toolkit'],
+  },
+  
+  // Resolver alias para problemas de módulos
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
+  
+  // SSR options para resolver CommonJS
+  ssr: {
+    noExternal: ['es-toolkit'],
   },
 })
