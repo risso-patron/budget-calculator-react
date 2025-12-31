@@ -39,8 +39,13 @@ export default defineConfig({
   
   // Optimización de dependencias
   optimizeDeps: {
-    include: ['react', 'react-dom', '@supabase/supabase-js'],
-    exclude: ['es-toolkit'],
+    include: [
+      'react', 
+      'react-dom', 
+      '@supabase/supabase-js',
+      'es-toolkit/compat',
+      'recharts'
+    ],
   },
   
   // Resolver alias para problemas de módulos

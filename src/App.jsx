@@ -35,7 +35,7 @@ import AnimationsTest from './pages/AnimationsTest';
  * Componente principal de la aplicación con autenticación
  */
 function AppContent() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [showMigration, setShowMigration] = useState(false);
   const [creditCards, setCreditCards] = useState([]);
   const [goals, setGoals] = useState([]);
@@ -76,8 +76,8 @@ function AppContent() {
     ...expenses.map(expense => ({ ...expense, type: 'expense' }))
   ];
 
-  // Hook de IA para análisis financiero
-  const aiInsights = useAIInsights(allTransactions);
+  // Hook de IA para análisis financiero - DESHABILITADO (requiere VITE_ANTHROPIC_API_KEY)
+  // const aiInsights = useAIInsights(allTransactions);
 
   // Funciones para tarjetas de crédito
   const handleAddCard = (card) => {
@@ -227,23 +227,22 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incomes.length, expenses.length, goals.length, balance, creditCards.length]);
 
-  // TEMPORALMENTE DESHABILITADO - Para tomar screenshots sin autenticación
   // Mostrar página de autenticación si no hay usuario
-  // if (!user && !authLoading) {
-  //   return <AuthPage />;
-  // }
+  if (!user && !authLoading) {
+    return <AuthPage />;
+  }
 
   // Mostrar loading mientras se verifica la autenticación
-  // if (authLoading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="text-center">
-  //         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-  //         <p className="text-gray-600">Cargando...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   // PÁGINA DE TEST DE ANIMACIONES (Alt + A para toggle)
   if (showAnimationsTest) {
@@ -354,12 +353,14 @@ function AppContent() {
           />
 
           {/* ✅ PANEL DE ANÁLISIS FINANCIERO CON IA */}
+          {/* TEMPORALMENTE DESHABILITADO - Necesita VITE_ANTHROPIC_API_KEY
           <AIInsightsPanel
             analysis={aiInsights.analysis}
             loading={aiInsights.analyzing}
             error={aiInsights.analysisError}
             onAnalyze={() => aiInsights.runAnalysis({ totalIncome, totalExpenses, balance })}
           />
+          */}
 
           {/* FORMULARIOS PARA AGREGAR TRANSACCIONES */}
           <TransactionForm
@@ -484,7 +485,17 @@ function AppContent() {
 
         {/* Footer */}
         <footer className="mt-12 text-center text-white/80 text-sm">
-          <p>© 2025 Budget Calculator | Desarrollado con React + Vite + TailwindCSS</p>
+          <p>
+            © 2025 Budget Calculator | Desarrollado por{' '}
+            <a 
+              href="https://www.linkedin.com/in/jorge-luis-risso-/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 transition-colors underline"
+            >
+              R P
+            </a>
+          </p>
         </footer>
       </div>
     </div>

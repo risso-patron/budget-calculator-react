@@ -84,5 +84,13 @@
   .dark .skeleton {
     animation: skeleton-loading-dark 1s linear infinite alternate;
   }
-}
 
+  /* Animation delays para blobs */
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
