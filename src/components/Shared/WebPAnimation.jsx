@@ -181,6 +181,18 @@ export const IncomeWebP = ({ size = 'lg', className = '' }) => (
   />
 );
 
+/**
+ * Trophy - Para logros y celebraciones
+ */
+export const TrophyWebP = ({ size = 'lg', className = '' }) => (
+  <WebPAnimation
+    src="/animations/income.webp"
+    alt="Trophy"
+    size={size}
+    className={`${className} filter hue-rotate-60`}
+  />
+);
+
 // ==========================================
 // CONTENEDORES CON EFECTOS
 // ==========================================
