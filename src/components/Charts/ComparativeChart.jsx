@@ -11,7 +11,7 @@ import {
   Cell
 } from 'recharts';
 import { ChartContainer } from './ChartContainer';
-import { transformToComparativeData, CustomTooltip } from '../../utils/chartHelpers.jsx';
+import { transformToComparativeData, CustomTooltip } from '../../utils/chartHelpers';
 import { formatCurrency } from '../../utils/formatters';
 
 /**

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { ChartContainer } from './ChartContainer';
-import { transformToDonutData, CustomTooltip } from '../../utils/chartHelpers.jsx';
+import { transformToDonutData, CustomTooltip } from '../../utils/chartHelpers';
 import { formatCurrency } from '../../utils/formatters';
 
 /**

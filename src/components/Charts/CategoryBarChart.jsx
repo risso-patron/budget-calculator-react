@@ -11,7 +11,7 @@ import {
   LabelList
 } from 'recharts';
 import { ChartContainer } from './ChartContainer';
-import { transformToBarData, CustomTooltip } from '../../utils/chartHelpers.jsx';
+import { transformToBarData, CustomTooltip } from '../../utils/chartHelpers';
 import { formatCurrency } from '../../utils/formatters';
 
 /**

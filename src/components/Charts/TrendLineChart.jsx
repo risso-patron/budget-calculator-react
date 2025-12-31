@@ -10,7 +10,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { ChartContainer } from './ChartContainer';
-import { transformToLineData, CustomTooltip, hasChartData } from '../../utils/chartHelpers.jsx';
+import { transformToLineData, CustomTooltip, hasChartData } from '../../utils/chartHelpers';
 
 /**
  * Gráfico de Líneas - Tendencias Temporales (Últimos 30 días)
