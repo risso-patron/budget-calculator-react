@@ -1,35 +1,238 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import PropTypes from 'prop-types';
+import { NumericFormat } from 'react-number-format';
 import { Card } from '../Shared/Card';
 import { Button } from '../Shared/Button';
 import { EXPENSE_CATEGORIES } from '../../constants/categories';
+import { validateDescription, validateAmount, validateDate } from '../../utils/validators';
 import { CoinsWebP, DonutWebP } from '../Shared/WebPAnimation';
 
 /**
- * Componente TransactionForm - Formularios para agregar ingresos y gastos
+ * Input de monto con formateo de moneda
+ */
+const CurrencyInput = ({ 
+  id, 
+  value, 
+  onChange, 
+  onBlur,
+  error, 
+  label, 
+  required = true 
+}) => {
+  const errorId = `${id}-error`;
+  
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {label} {required && <span className="text-red-500" aria-label="requerido">*</span>}
+      </label>
+      <NumericFormat
+        id={id}
+        value={value}
+        onValueChange={(values) => onChange(values.floatValue || '')}
+        onBlur={onBlur}
+        thousandSeparator=","
+        decimalSeparator="."
+        prefix="$"
+        decimalScale={2}
+        fixedDecimalScale={false}
+        allowNegative={false}
+        placeholder="$0.00"
+        className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+          ${error 
+            ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
+            : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+          }
+          dark:bg-gray-700 dark:text-white
+        `}
+        aria-required={required}
+        aria-invalid={error ? 'true' : 'false'}
+        aria-describedby={error ? errorId : undefined}
+        inputMode="decimal"
+        autoComplete="transaction-amount"
+      />
+      {error && (
+        <p id={errorId} role="alert" className="text-red-500 text-xs mt-1 flex items-center gap-1">
+          <span aria-hidden="true">⚠️</span> {error}
+        </p>
+      )}
+    </div>
+  );
+};
+
+CurrencyInput.propTypes = {
+  id: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onChange: PropTypes.func.isRequired,
+  onBlur: PropTypes.func,
+  error: PropTypes.string,
+  label: PropTypes.string.isRequired,
+  required: PropTypes.bool,
+};
+
+/**
+ * Componente TransactionForm - Formularios mejorados con validación en tiempo real
  */
 export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
+  // IDs únicos para accesibilidad
+  const incomeDescId = useId();
+  const incomeAmountId = useId();
+  const incomeDateId = useId();
+  const expenseDescId = useId();
+  const expenseCatId = useId();
+  const expenseAmountId = useId();
+  const expenseDateId = useId();
+
   // Estados para ingresos
   const [incomeDescription, setIncomeDescription] = useState('');
   const [incomeAmount, setIncomeAmount] = useState('');
   const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [incomeErrors, setIncomeErrors] = useState({});
+  const [incomeTouched, setIncomeTouched] = useState({});
 
   // Estados para gastos
   const [expenseDescription, setExpenseDescription] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('Vivienda');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [expenseErrors, setExpenseErrors] = useState({});
+  const [expenseTouched, setExpenseTouched] = useState({});
+
+  // Validación de campos en tiempo real
+  const validateIncomeField = (field, value) => {
+    let validation;
+    
+    switch (field) {
+      case 'description':
+        validation = validateDescription(value);
+        break;
+      case 'amount':
+        validation = validateAmount(value);
+        break;
+      case 'date':
+        validation = validateDate(value);
+        break;
+      default:
+        return null;
+    }
+    
+    return validation.isValid ? null : validation.error;
+  };
+
+  // Handlers de ingresos
+  const handleIncomeDescriptionChange = (e) => {
+    const value = e.target.value;
+    setIncomeDescription(value);
+    
+    if (incomeTouched.description) {
+      const error = validateIncomeField('description', value);
+      setIncomeErrors(prev => ({ ...prev, description: error }));
+    }
+  };
+
+  const handleIncomeAmountChange = (value) => {
+    setIncomeAmount(value);
+    
+    if (incomeTouched.amount) {
+      const error = validateIncomeField('amount', value);
+      setIncomeErrors(prev => ({ ...prev, amount: error }));
+    }
+  };
+
+  const handleIncomeDateChange = (e) => {
+    const value = e.target.value;
+    setIncomeDate(value);
+    
+    if (incomeTouched.date) {
+      const error = validateIncomeField('date', value);
+      setIncomeErrors(prev => ({ ...prev, date: error }));
+    }
+  };
+
+  const handleIncomeBlur = (field) => {
+    setIncomeTouched(prev => ({ ...prev, [field]: true }));
+    
+    let value;
+    if (field === 'description') value = incomeDescription;
+    if (field === 'amount') value = incomeAmount;
+    if (field === 'date') value = incomeDate;
+    
+    const error = validateIncomeField(field, value);
+    setIncomeErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  // Handlers de gastos
+  const handleExpenseDescriptionChange = (e) => {
+    const value = e.target.value;
+    setExpenseDescription(value);
+    
+    if (expenseTouched.description) {
+      const error = validateIncomeField('description', value);
+      setExpenseErrors(prev => ({ ...prev, description: error }));
+    }
+  };
+
+  const handleExpenseAmountChange = (value) => {
+    setExpenseAmount(value);
+    
+    if (expenseTouched.amount) {
+      const error = validateIncomeField('amount', value);
+      setExpenseErrors(prev => ({ ...prev, amount: error }));
+    }
+  };
+
+  const handleExpenseDateChange = (e) => {
+    const value = e.target.value;
+    setExpenseDate(value);
+    
+    if (expenseTouched.date) {
+      const error = validateIncomeField('date', value);
+      setExpenseErrors(prev => ({ ...prev, date: error }));
+    }
+  };
+
+  const handleExpenseBlur = (field) => {
+    setExpenseTouched(prev => ({ ...prev, [field]: true }));
+    
+    let value;
+    if (field === 'description') value = expenseDescription;
+    if (field === 'amount') value = expenseAmount;
+    if (field === 'date') value = expenseDate;
+    
+    const error = validateIncomeField(field, value);
+    setExpenseErrors(prev => ({ ...prev, [field]: error }));
+  };
 
   /**
    * Manejar submit de ingreso
    */
   const handleIncomeSubmit = (e) => {
     e.preventDefault();
+    
+    // Marcar todos los campos como touched
+    setIncomeTouched({ description: true, amount: true, date: true });
+    
+    // Validar todos los campos
+    const errors = {
+      description: validateIncomeField('description', incomeDescription),
+      amount: validateIncomeField('amount', incomeAmount),
+      date: validateIncomeField('date', incomeDate),
+    };
+    
+    setIncomeErrors(errors);
+    
+    // Si hay errores, no continuar
+    if (Object.values(errors).some(error => error !== null)) {
+      return;
+    }
+    
     const success = onAddIncome(incomeDescription, incomeAmount, incomeDate);
     if (success) {
       setIncomeDescription('');
       setIncomeAmount('');
       setIncomeDate(new Date().toISOString().split('T')[0]);
+      setIncomeErrors({});
+      setIncomeTouched({});
     }
   };
 
@@ -38,25 +241,28 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
    */
   const handleExpenseSubmit = (e) => {
     e.preventDefault();
+    
+    setExpenseTouched({ description: true, amount: true, date: true });
+    
+    const errors = {
+      description: validateIncomeField('description', expenseDescription),
+      amount: validateIncomeField('amount', expenseAmount),
+      date: validateIncomeField('date', expenseDate),
+    };
+    
+    setExpenseErrors(errors);
+    
+    if (Object.values(errors).some(error => error !== null)) {
+      return;
+    }
+    
     const success = onAddExpense(expenseDescription, expenseCategory, expenseAmount, expenseDate);
     if (success) {
       setExpenseDescription('');
       setExpenseAmount('');
       setExpenseDate(new Date().toISOString().split('T')[0]);
-    }
-  };
-
-  /**
-   * Manejar tecla Enter
-   */
-  const handleKeyPress = (e, type) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (type === 'income') {
-        handleIncomeSubmit(e);
-      } else {
-        handleExpenseSubmit(e);
-      }
+      setExpenseErrors({});
+      setExpenseTouched({});
     }
   };
 
@@ -68,50 +274,75 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
           <CoinsWebP size="sm" />
           <h3 className="text-xl font-bold text-gray-800 dark:text-white">Ingresos</h3>
         </div>
-        <form onSubmit={handleIncomeSubmit} className="space-y-4">
+        <form onSubmit={handleIncomeSubmit} className="space-y-4" noValidate>
           <div>
-            <label htmlFor="incomeDescription" className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción
+            <label htmlFor={incomeDescId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Descripción <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <input
               type="text"
-              id="incomeDescription"
+              id={incomeDescId}
               value={incomeDescription}
-              onChange={(e) => setIncomeDescription(e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, 'income')}
+              onChange={handleIncomeDescriptionChange}
+              onBlur={() => handleIncomeBlur('description')}
               placeholder="Ej: Salario, Freelance"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all"
+              className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+                ${incomeErrors.description 
+                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
+                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+                }
+                dark:bg-gray-700 dark:text-white
+              `}
+              aria-required="true"
+              aria-invalid={incomeErrors.description ? 'true' : 'false'}
+              aria-describedby={incomeErrors.description ? `${incomeDescId}-error` : undefined}
+              autoComplete="off"
+              maxLength={100}
             />
+            {incomeErrors.description && (
+              <p id={`${incomeDescId}-error`} role="alert" className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                <span aria-hidden="true">⚠️</span> {incomeErrors.description}
+              </p>
+            )}
           </div>
 
-          <div>
-            <label htmlFor="incomeAmount" className="block text-sm font-medium text-gray-700 mb-2">
-              Cantidad ($)
-            </label>
-            <input
-              type="number"
-              id="incomeAmount"
-              value={incomeAmount}
-              onChange={(e) => setIncomeAmount(e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, 'income')}
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all"
-            />
-          </div>
+          <CurrencyInput
+            id={incomeAmountId}
+            value={incomeAmount}
+            onChange={handleIncomeAmountChange}
+            onBlur={() => handleIncomeBlur('amount')}
+            error={incomeErrors.amount}
+            label="Cantidad"
+            required
+          />
 
           <div>
-            <label htmlFor="incomeDate" className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha
+            <label htmlFor={incomeDateId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Fecha <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <input
               type="date"
-              id="incomeDate"
+              id={incomeDateId}
               value={incomeDate}
-              onChange={(e) => setIncomeDate(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all"
+              onChange={handleIncomeDateChange}
+              onBlur={() => handleIncomeBlur('date')}
+              max={new Date().toISOString().split('T')[0]}
+              className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+                ${incomeErrors.date 
+                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
+                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+                }
+                dark:bg-gray-700 dark:text-white dark:color-scheme-dark
+              `}
+              aria-required="true"
+              aria-invalid={incomeErrors.date ? 'true' : 'false'}
+              aria-describedby={incomeErrors.date ? `${incomeDateId}-error` : undefined}
             />
+            {incomeErrors.date && (
+              <p id={`${incomeDateId}-error`} role="alert" className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                <span aria-hidden="true">⚠️</span> {incomeErrors.date}
+              </p>
+            )}
           </div>
 
           <Button type="submit" variant="primary" className="w-full">
@@ -126,68 +357,94 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
           <DonutWebP size="sm" />
           <h3 className="text-xl font-bold text-gray-800 dark:text-white">Gastos</h3>
         </div>
-        <form onSubmit={handleExpenseSubmit} className="space-y-4">
+        <form onSubmit={handleExpenseSubmit} className="space-y-4" noValidate>
           <div>
-            <label htmlFor="expenseDescription" className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción
+            <label htmlFor={expenseDescId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Descripción <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <input
               type="text"
-              id="expenseDescription"
+              id={expenseDescId}
               value={expenseDescription}
-              onChange={(e) => setExpenseDescription(e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, 'expense')}
+              onChange={handleExpenseDescriptionChange}
+              onBlur={() => handleExpenseBlur('description')}
               placeholder="Ej: Renta, Comida"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all"
+              className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+                ${expenseErrors.description 
+                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
+                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+                }
+                dark:bg-gray-700 dark:text-white
+              `}
+              aria-required="true"
+              aria-invalid={expenseErrors.description ? 'true' : 'false'}
+              aria-describedby={expenseErrors.description ? `${expenseDescId}-error` : undefined}
+              autoComplete="off"
+              maxLength={100}
             />
+            {expenseErrors.description && (
+              <p id={`${expenseDescId}-error`} role="alert" className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                <span aria-hidden="true">⚠️</span> {expenseErrors.description}
+              </p>
+            )}
           </div>
 
           <div>
-            <label htmlFor="expenseCategory" className="block text-sm font-medium text-gray-700 mb-2">
-              Categoría
+            <label htmlFor={expenseCatId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Categoría <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <select
-              id="expenseCategory"
+              id={expenseCatId}
               value={expenseCategory}
               onChange={(e) => setExpenseCategory(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all bg-white"
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900 outline-none transition-all dark:bg-gray-700 dark:text-white"
+              aria-required="true"
             >
-              {EXPENSE_CATEGORIES.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.icon} {category.label}
+              {EXPENSE_CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.icon} {cat.label}
                 </option>
               ))}
             </select>
           </div>
 
-          <div>
-            <label htmlFor="expenseAmount" className="block text-sm font-medium text-gray-700 mb-2">
-              Cantidad ($)
-            </label>
-            <input
-              type="number"
-              id="expenseAmount"
-              value={expenseAmount}
-              onChange={(e) => setExpenseAmount(e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, 'expense')}
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all"
-            />
-          </div>
+          <CurrencyInput
+            id={expenseAmountId}
+            value={expenseAmount}
+            onChange={handleExpenseAmountChange}
+            onBlur={() => handleExpenseBlur('amount')}
+            error={expenseErrors.amount}
+            label="Cantidad"
+            required
+          />
 
           <div>
-            <label htmlFor="expenseDate" className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha
+            <label htmlFor={expenseDateId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Fecha <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <input
               type="date"
-              id="expenseDate"
+              id={expenseDateId}
               value={expenseDate}
-              onChange={(e) => setExpenseDate(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all"
+              onChange={handleExpenseDateChange}
+              onBlur={() => handleExpenseBlur('date')}
+              max={new Date().toISOString().split('T')[0]}
+              className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+                ${expenseErrors.date 
+                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
+                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+                }
+                dark:bg-gray-700 dark:text-white dark:color-scheme-dark
+              `}
+              aria-required="true"
+              aria-invalid={expenseErrors.date ? 'true' : 'false'}
+              aria-describedby={expenseErrors.date ? `${expenseDateId}-error` : undefined}
             />
+            {expenseErrors.date && (
+              <p id={`${expenseDateId}-error`} role="alert" className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                <span aria-hidden="true">⚠️</span>  {expenseErrors.date}
+              </p>
+            )}
           </div>
 
           <Button type="submit" variant="primary" className="w-full">

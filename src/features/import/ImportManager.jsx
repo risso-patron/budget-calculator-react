@@ -1,15 +1,23 @@
 import { useState } from 'react';
+import { useAIInsights } from '../../hooks/useAIInsightsMulti';
 
-export default function ImportManager({ onImport }) {
+export default function ImportManager({ onImport, onBulkImport }) {
   const [previewData, setPreviewData] = useState(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState(null);
   const [importStats, setImportStats] = useState(null);
+  const [autoCategorize, setAutoCategorize] = useState(true); // ✨ NUEVO: Auto-categorización activada por defecto
+  const [categorizingProgress, setCategorizingProgress] = useState(null); // ✨ NUEVO: Progreso de categorización
+  
+  // Hook de IA para auto-categorización
+  const aiInsights = useAIInsights([]);
 
   // Manejar selección de archivo
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    console.log('📁 Archivo seleccionado:', file.name, 'Tamaño:', file.size, 'bytes');
 
     // Verificar extensión
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
@@ -25,14 +33,28 @@ export default function ImportManager({ onImport }) {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
+        console.log('📖 Leyendo archivo...');
         const text = event.target.result;
+        console.log('📄 Contenido leído:', text.substring(0, 200) + '...');
+        console.log('📏 Longitud total:', text.length, 'caracteres');
+        
         const parsed = parseCSV(text);
+        console.log('✅ Parseado exitoso:', parsed.length, 'transacciones');
+        console.log('🔍 Primera transacción:', parsed[0]);
+        
         setPreviewData(parsed);
       } catch (err) {
+        console.error('❌ Error al parsear:', err);
         setError(`Error al leer el archivo: ${err.message}`);
       }
     };
-    reader.readAsText(file);
+    
+    reader.onerror = (error) => {
+      console.error('❌ Error al leer archivo:', error);
+      setError('Error al leer el archivo. Intenta guardarlo de nuevo como CSV UTF-8.');
+    };
+    
+    reader.readAsText(file, 'UTF-8');
   };
 
   // Parsear CSV manualmente (sin dependencias externas)
@@ -127,6 +149,9 @@ export default function ImportManager({ onImport }) {
       // 🔥 MAPEAR VALORES POR NOMBRE DE COLUMNA
       let fecha = (values[columnIndexMap['fecha']] || '').trim();
       
+      // Convertir formato Excel (4-Dec-25) a DD/MM/YYYY
+      fecha = convertExcelDate(fecha);
+      
       // Normalizar formato de fecha: 3/11/2025 → 03/11/2025
       if (fecha.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
         const parts = fecha.split('/');
@@ -162,6 +187,37 @@ export default function ImportManager({ onImport }) {
     return data;
   };
 
+  // Convertir fechas de formato Excel a DD/MM/YYYY
+  const convertExcelDate = (dateStr) => {
+    // Mapeo de meses abreviados en inglés
+    const monthMap = {
+      'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+      'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
+      'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+    };
+    
+    // Formato: "4-Dec-25" o "24-Feb-26"
+    const excelFormatRegex = /^(\d{1,2})-([a-zA-Z]{3})-(\d{2})$/;
+    const match = dateStr.match(excelFormatRegex);
+    
+    if (match) {
+      const day = match[1].padStart(2, '0');
+      const monthAbbr = match[2].toLowerCase();
+      const yearShort = match[3];
+      
+      // Convertir año de 2 dígitos a 4 dígitos (asumiendo 2000-2099)
+      const year = `20${yearShort}`;
+      
+      const month = monthMap[monthAbbr];
+      if (month) {
+        return `${day}/${month}/${year}`;
+      }
+    }
+    
+    // Si no es formato Excel, devolver como está
+    return dateStr;
+  };
+
   // Validar una fila individual
   const validateRow = (row) => {
     // Tipo debe ser "ingreso" o "gasto" (ya viene normalizado a minúsculas)
@@ -195,52 +251,161 @@ export default function ImportManager({ onImport }) {
 
     setImporting(true);
     setError(null);
+    setCategorizingProgress(null);
 
     try {
-      const stats = {
-        total: previewData.length,
-        imported: 0,
-        errors: 0,
-      };
+      console.log('🚀 Preparando', previewData.length, 'transacciones para importación masiva');
 
-      for (const row of previewData) {
-        try {
+      let dataToImport = previewData;
+
+      // ✨ AUTO-CATEGORIZACIÓN CON IA (si está activada)
+      if (autoCategorize) {
+        console.log('🤖 Auto-categorización activada, analizando transacciones...');
+        
+        // Filtrar solo gastos sin categoría o con categoría "Otros"
+        const needsCategorization = previewData.filter(row => 
+          row.tipo.toLowerCase() === 'gasto' && (!row.categoria || row.categoria === 'Otros')
+        );
+
+        if (needsCategorization.length > 0) {
+          console.log(`🔍 ${needsCategorization.length} transacciones necesitan categorización`);
+          
+          setCategorizingProgress({
+            total: needsCategorization.length,
+            current: 0,
+            status: 'Categorizando con IA...'
+          });
+
+          try {
+            // Preparar transacciones para IA
+            const transactionsForAI = needsCategorization.map(row => ({
+              description: row.descripcion,
+              amount: parseFloat(row.monto),
+              type: 'expense'
+            }));
+
+            // Llamar a IA para categorizar en lote
+            const categorized = await aiInsights.bulkCategorize(transactionsForAI);
+
+            // Actualizar previewData con categorías sugeridas
+            dataToImport = previewData.map(row => {
+              if (row.tipo.toLowerCase() === 'gasto' && (!row.categoria || row.categoria === 'Otros')) {
+                const aiResult = categorized.find(c => c.description === row.descripcion);
+                if (aiResult && aiResult.category) {
+                  console.log(`✨ "${row.descripcion}" → ${aiResult.category} (${Math.round(aiResult.aiConfidence * 100)}% confianza)`);
+                  return {
+                    ...row,
+                    categoria: aiResult.category,
+                    aiCategorized: true,
+                    aiConfidence: aiResult.aiConfidence
+                  };
+                }
+              }
+              return row;
+            });
+
+            setCategorizingProgress({
+              total: needsCategorization.length,
+              current: needsCategorization.length,
+              status: '✅ Categorización completada'
+            });
+
+            console.log('✅ Auto-categorización completada');
+          } catch (aiError) {
+            console.warn('⚠️ Error en auto-categorización, continuando sin ella:', aiError);
+            setCategorizingProgress(null);
+          }
+        } else {
+          console.log('ℹ️ Todas las transacciones ya tienen categoría');
+        }
+      }
+
+      // Si existe onBulkImport, usar importación masiva (más rápido)
+      if (onBulkImport) {
+        // Preparar todas las transacciones en un solo array
+        const transactionsToImport = dataToImport.map(row => {
           // Convertir fecha si es DD/MM/YYYY
           let date = row.fecha;
           if (date.includes('/')) {
             const [day, month, year] = date.split('/');
-            date = `${year}-${month}-${day}`;
+            date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
           }
 
-          // Determinar categoría (solo para gastos)
-          const category = row.categoria || 'Otros';
+          return {
+            type: row.tipo.toLowerCase() === 'ingreso' ? 'income' : 'expense',
+            description: row.descripcion,
+            amount: parseFloat(row.monto),
+            date,
+            category: row.tipo.toLowerCase() === 'gasto' ? (row.categoria || 'Otros') : undefined,
+            aiCategorized: row.aiCategorized || false, // Marcar si fue categorizado por IA
+            aiConfidence: row.aiConfidence || 0,
+          };
+        });
 
-          // Llamar a la función onImport del parent
-          if (row.tipo.toLowerCase() === 'ingreso') {
-            await onImport('income', {
-              description: row.descripcion,
-              amount: parseFloat(row.monto),
-              date,
-            });
-          } else {
-            await onImport('expense', {
-              description: row.descripcion,
-              category,
-              amount: parseFloat(row.monto),
-              date,
-            });
+        console.log('📦 Transacciones preparadas:', transactionsToImport.length);
+        
+        // Llamar a la función de importación masiva
+        const result = await onBulkImport(transactionsToImport);
+        
+        console.log('✅ Resultado de importación:', result);
+
+        setImportStats({
+          total: dataToImport.length,
+          imported: result.imported || 0,
+          errors: result.errors || 0,
+          aiCategorized: dataToImport.filter(r => r.aiCategorized).length,
+        });
+      } else {
+        // Fallback: Importación secuencial (para compatibilidad)
+        console.warn('⚠️ onBulkImport no disponible, usando importación secuencial');
+        
+        const stats = {
+          total: previewData.length,
+          imported: 0,
+          errors: 0,
+        };
+
+        for (const row of previewData) {
+          try {
+            // Convertir fecha si es DD/MM/YYYY
+            let date = row.fecha;
+            if (date.includes('/')) {
+              const [day, month, year] = date.split('/');
+              date = `${year}-${month}-${day}`;
+            }
+
+            // Determinar categoría (solo para gastos)
+            const category = row.categoria || 'Otros';
+
+            // Llamar a la función onImport del parent
+            if (row.tipo.toLowerCase() === 'ingreso') {
+              await onImport('income', {
+                description: row.descripcion,
+                amount: parseFloat(row.monto),
+                date,
+              });
+            } else {
+              await onImport('expense', {
+                description: row.descripcion,
+                category,
+                amount: parseFloat(row.monto),
+                date,
+              });
+            }
+
+            stats.imported++;
+          } catch (err) {
+            console.error(`Error importando fila ${row.rowNumber}:`, err);
+            stats.errors++;
           }
-
-          stats.imported++;
-        } catch (err) {
-          console.error(`Error importando fila ${row.rowNumber}:`, err);
-          stats.errors++;
         }
+
+        setImportStats(stats);
       }
 
-      setImportStats(stats);
       setPreviewData(null);
     } catch (err) {
+      console.error('❌ Error durante la importación:', err);
       setError(`Error durante la importación: ${err.message}`);
     } finally {
       setImporting(false);
@@ -379,7 +544,17 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{row.fecha}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {row.categoria ? (
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">{row.categoria}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">{row.categoria}</span>
+                          {row.aiCategorized && (
+                            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded text-xs font-semibold flex items-center gap-1">
+                              🤖 IA
+                              {row.aiConfidence && (
+                                <span className="text-blue-600 dark:text-blue-400">({Math.round(row.aiConfidence)}%)</span>
+                              )}
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
@@ -394,6 +569,53 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
               ... y {previewData.length - 10} transacciones más (mostrando primeras 10)
             </p>
           )}
+
+          {/* ✨ OPCIÓN DE AUTO-CATEGORIZACIÓN CON IA */}
+          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={autoCategorize}
+                onChange={(e) => setAutoCategorize(e.target.checked)}
+                disabled={importing}
+                className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    🤖 Auto-categorizar con IA (Recomendado)
+                  </span>
+                  <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-semibold rounded-full">
+                    GRATIS
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  Las transacciones sin categoría serán analizadas automáticamente usando IA. 
+                  Ejemplo: "Super 99" → Comida, "Uber" → Transporte, "Netflix" → Entretenimiento
+                </p>
+                {categorizingProgress && (
+                  <div className="mt-3 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 mb-2">
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="font-medium">{categorizingProgress.status}</span>
+                    </div>
+                    <div className="bg-blue-200 dark:bg-blue-900/50 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-blue-600 dark:bg-blue-500 h-full transition-all duration-300"
+                        style={{ width: `${(categorizingProgress.current / categorizingProgress.total) * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      {categorizingProgress.current} de {categorizingProgress.total} categorizadas
+                    </p>
+                  </div>
+                )}
+              </div>
+            </label>
+          </div>
 
           {/* Botón de importación destacado */}
           <div className="mt-6 space-y-3">
@@ -477,6 +699,15 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
               <div className="text-3xl font-bold text-green-600 dark:text-green-400">{importStats.imported}</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Importadas ✓</div>
             </div>
+            {importStats.aiCategorized > 0 && (
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2">
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{importStats.aiCategorized}</div>
+                  <span className="text-lg">🤖</span>
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Categorizadas con IA</div>
+              </div>
+            )}
             {importStats.errors > 0 && (
               <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
                 <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{importStats.errors}</div>
@@ -484,6 +715,25 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
               </div>
             )}
           </div>
+
+          {/* Mensaje especial de IA */}
+          {importStats.aiCategorized > 0 && (
+            <div className="flex items-start gap-2 p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700 mb-4">
+              <span className="text-2xl flex-shrink-0">✨</span>
+              <div className="text-sm">
+                <p className="font-semibold text-purple-900 dark:text-purple-300 mb-2">
+                  ¡La IA ha categorizado automáticamente {importStats.aiCategorized} transacciones!
+                </p>
+                <p className="text-purple-700 dark:text-purple-400">
+                  Nuestros modelos de IA analizaron las descripciones de tus transacciones y asignaron categorías inteligentemente.
+                  Ejemplos: "Super 99" → Comida, "Uber" → Transporte, "Netflix" → Entretenimiento.
+                </p>
+                <p className="text-xs text-purple-600 dark:text-purple-500 mt-2 italic">
+                  💡 Revisa las categorías asignadas y ajústalas si es necesario desde tu lista de transacciones.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">

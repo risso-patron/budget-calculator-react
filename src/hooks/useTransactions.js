@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLocalStorage } from './useLocalStorage';
-import { STORAGE_KEYS, TRANSACTION_TYPES } from '../constants/categories';
+import { STORAGE_KEYS, TRANSACTION_TYPES, EXPENSE_CATEGORIES } from '../constants/categories';
 import { validateTransaction } from '../utils/validators';
+import { addAmounts, subtractAmounts, calculatePercentage } from '../utils/currencyHelpers';
 
 /**
  * Custom hook para manejar toda la lógica de transacciones (ingresos y gastos)
@@ -33,15 +34,16 @@ export const useTransactions = () => {
    * Agrega un nuevo ingreso
    */
   const addIncome = useCallback((description, amount, date = null) => {
-    const validation = validateTransaction({ description, amount });
+    const validation = validateTransaction({ description, amount, date });
     
     if (!validation.isValid) {
-      showAlert('error', validation.errors[0]);
+      const firstError = Object.values(validation.errors)[0];
+      showAlert('error', firstError);
       return false;
     }
 
     const newIncome = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       description: description.trim(),
       amount: parseFloat(amount),
       type: TRANSACTION_TYPES.INCOME,
@@ -58,15 +60,20 @@ export const useTransactions = () => {
    * Agrega un nuevo gasto
    */
   const addExpense = useCallback((description, category, amount, date = null) => {
-    const validation = validateTransaction({ description, category, amount }, true);
+    const validation = validateTransaction(
+      { description, category, amount, date }, 
+      true, 
+      EXPENSE_CATEGORIES
+    );
     
     if (!validation.isValid) {
-      showAlert('error', validation.errors[0]);
+      const firstError = Object.values(validation.errors)[0];
+      showAlert('error', firstError);
       return false;
     }
 
     const newExpense = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       description: description.trim(),
       category,
       amount: parseFloat(amount),
@@ -77,6 +84,48 @@ export const useTransactions = () => {
 
     setExpenses(prev => [...prev, newExpense]);
     showAlert('success', 'Gasto agregado exitosamente');
+    return true;
+  }, [setExpenses, showAlert]);
+
+  /**
+   * Actualiza un ingreso existente
+   */
+  const updateIncome = useCallback((id, updates) => {
+    const validation = validateTransaction(updates);
+    
+    if (!validation.isValid) {
+      const firstError = Object.values(validation.errors)[0];
+      showAlert('error', firstError);
+      return false;
+    }
+
+    setIncomes(prev => prev.map(income => 
+      income.id === id 
+        ? { ...income, ...updates, amount: parseFloat(updates.amount) }
+        : income
+    ));
+    showAlert('success', 'Ingreso actualizado');
+    return true;
+  }, [setIncomes, showAlert]);
+
+  /**
+   * Actualiza un gasto existente
+   */
+  const updateExpense = useCallback((id, updates) => {
+    const validation = validateTransaction(updates, true, EXPENSE_CATEGORIES);
+    
+    if (!validation.isValid) {
+      const firstError = Object.values(validation.errors)[0];
+      showAlert('error', firstError);
+      return false;
+    }
+
+    setExpenses(prev => prev.map(expense => 
+      expense.id === id 
+        ? { ...expense, ...updates, amount: parseFloat(updates.amount) }
+        : expense
+    ));
+    showAlert('success', 'Gasto actualizado');
     return true;
   }, [setExpenses, showAlert]);
 
@@ -100,21 +149,85 @@ export const useTransactions = () => {
     }
   }, [setExpenses, showAlert]);
 
-  // Cálculos automáticos (memoizados para performance)
+  /**
+   * Agrega múltiples transacciones en lote (para importación masiva)
+   */
+  const addBulkTransactions = useCallback((transactions) => {
+    const newIncomes = [];
+    const newExpenses = [];
+    let errorCount = 0;
+
+    transactions.forEach((transaction) => {
+      try {
+        const { type, description, amount, date, category } = transaction;
+        
+        // Validación básica
+        if (!description || !amount || amount <= 0) {
+          errorCount++;
+          return;
+        }
+
+        const baseTransaction = {
+          id: crypto.randomUUID(),
+          description: description.trim(),
+          amount: parseFloat(amount),
+          date: date || new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString(),
+        };
+
+        if (type === 'income') {
+          newIncomes.push({
+            ...baseTransaction,
+            type: TRANSACTION_TYPES.INCOME,
+          });
+        } else {
+          newExpenses.push({
+            ...baseTransaction,
+            category: category || 'Otros',
+            type: TRANSACTION_TYPES.EXPENSE,
+          });
+        }
+      } catch (error) {
+        console.error('Error procesando transacci��n:', error);
+        errorCount++;
+      }
+    });
+
+    // Actualizar estados en batch
+    if (newIncomes.length > 0) {
+      setIncomes(prev => [...prev, ...newIncomes]);
+    }
+    if (newExpenses.length > 0) {
+      setExpenses(prev => [...prev, ...newExpenses]);
+    }
+
+    const total = newIncomes.length + newExpenses.length;
+    if (total > 0) {
+      showAlert('success', `${total} transacciones importadas exitosamente`);
+    }
+    
+    return {
+      imported: total,
+      errors: errorCount,
+      total: transactions.length,
+    };
+  }, [setIncomes, setExpenses, showAlert]);
+
+  // Cálculos automáticos con precisión decimal (memoizados para performance)
   const totalIncome = useMemo(() => {
-    return incomes.reduce((sum, income) => sum + income.amount, 0);
+    return incomes.reduce((sum, income) => addAmounts(sum, income.amount), 0);
   }, [incomes]);
 
   const totalExpenses = useMemo(() => {
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    return expenses.reduce((sum, expense) => addAmounts(sum, expense.amount), 0);
   }, [expenses]);
 
   const balance = useMemo(() => {
-    return totalIncome - totalExpenses;
+    return subtractAmounts(totalIncome, totalExpenses);
   }, [totalIncome, totalExpenses]);
 
   /**
-   * Análisis de gastos por categoría
+   * Análisis de gastos por categoría con precisión decimal
    */
   const categoryAnalysis = useMemo(() => {
     const categories = {};
@@ -123,14 +236,14 @@ export const useTransactions = () => {
       if (!categories[expense.category]) {
         categories[expense.category] = 0;
       }
-      categories[expense.category] += expense.amount;
+      categories[expense.category] = addAmounts(categories[expense.category], expense.amount);
     });
 
     return Object.entries(categories)
       .map(([category, amount]) => ({
         category,
         amount,
-        percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0,
+        percentage: calculatePercentage(amount, totalExpenses),
       }))
       .sort((a, b) => b.amount - a.amount);
   }, [expenses, totalExpenses]);
@@ -159,6 +272,9 @@ export const useTransactions = () => {
     // Funciones
     addIncome,
     addExpense,
+    addBulkTransactions,
+    updateIncome,
+    updateExpense,
     removeIncome,
     removeExpense,
     setFilter,

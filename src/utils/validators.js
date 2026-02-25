@@ -1,58 +1,153 @@
+import { isValidAmount } from './currencyHelpers';
+
 /**
- * Valida que una descripción no esté vacía
+ * Valida que una descripción no esté vacía y sea segura
  * @param {string} description - Descripción a validar
- * @returns {boolean} - true si es válida
+ * @returns {Object} { isValid: boolean, error: string|null }
  */
 export const validateDescription = (description) => {
-  return typeof description === 'string' && description.trim().length > 0;
+  if (!description || typeof description !== 'string') {
+    return { isValid: false, error: 'La descripción es requerida' };
+  }
+  
+  const trimmed = description.trim();
+  
+  if (trimmed.length === 0) {
+    return { isValid: false, error: 'La descripción no puede estar vacía' };
+  }
+  
+  if (trimmed.length < 3) {
+    return { isValid: false, error: 'La descripción debe tener al menos 3 caracteres' };
+  }
+  
+  if (trimmed.length > 100) {
+    return { isValid: false, error: 'La descripción no puede exceder 100 caracteres' };
+  }
+  
+  // Validar caracteres peligrosos
+  const dangerousChars = /<script|<iframe|javascript:|onerror=/i;
+  if (dangerousChars.test(trimmed)) {
+    return { isValid: false, error: 'La descripción contiene caracteres no permitidos' };
+  }
+  
+  return { isValid: true, error: null };
 };
 
 /**
- * Valida que una cantidad sea un número positivo
+ * Valida que una cantidad sea válida
  * @param {number|string} amount - Cantidad a validar
- * @returns {boolean} - true si es válida
+ * @returns {Object} { isValid: boolean, error: string|null }
  */
 export const validateAmount = (amount) => {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return !isNaN(num) && num > 0;
+  if (!amount || amount === '' || amount === '0' || amount === 0) {
+    return { isValid: false, error: 'El monto debe ser mayor a $0.00' };
+  }
+  
+  if (!isValidAmount(amount)) {
+    return { isValid: false, error: 'Ingresa un monto válido (máx. $999,999.99)' };
+  }
+  
+  return { isValid: true, error: null };
 };
 
 /**
- * Valida que una categoría esté en la lista de categorías permitidas
+ * Valida categoría
  * @param {string} category - Categoría a validar
- * @param {Array} allowedCategories - Lista de categorías permitidas
- * @returns {boolean} - true si es válida
+ * @param {Array} allowedCategories - Categorías permitidas
+ * @returns {Object} { isValid: boolean, error: string|null }
  */
 export const validateCategory = (category, allowedCategories) => {
-  return allowedCategories.some(cat => cat.value === category);
+  if (!category) {
+    return { isValid: false, error: 'Debes seleccionar una categoría' };
+  }
+  
+  const isAllowed = allowedCategories.some(cat => cat.value === category);
+  
+  if (!isAllowed) {
+    return { isValid: false, error: 'Categoría no válida' };
+  }
+  
+  return { isValid: true, error: null };
+};
+
+/**
+ * Valida fecha
+ * @param {string} date - Fecha en formato YYYY-MM-DD
+ * @param {boolean} allowFuture - Permitir fechas futuras
+ * @returns {Object} { isValid: boolean, error: string|null }
+ */
+export const validateDate = (date, allowFuture = false) => {
+  if (!date) {
+    return { isValid: false, error: 'La fecha es requerida' };
+  }
+  
+  const dateObj = new Date(date);
+  
+  if (isNaN(dateObj.getTime())) {
+    return { isValid: false, error: 'Fecha inválida' };
+  }
+  
+  if (!allowFuture) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dateObj.setHours(0, 0, 0, 0);
+    
+    if (dateObj > today) {
+      return { isValid: false, error: 'No se permiten fechas futuras' };
+    }
+  }
+  
+  // Validar que no sea demasiado antigua (10 años)
+  const tenYearsAgo = new Date();
+  tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+  
+  if (dateObj < tenYearsAgo) {
+    return { isValid: false, error: 'Fecha demasiado antigua (máx. 10 años)' };
+  }
+  
+  return { isValid: true, error: null };
 };
 
 /**
  * Valida un objeto de transacción completo
  * @param {Object} transaction - Transacción a validar
- * @param {string} transaction.description - Descripción
- * @param {number} transaction.amount - Cantidad
- * @param {string} transaction.category - Categoría (opcional para ingresos)
  * @param {boolean} requireCategory - Si la categoría es requerida
- * @returns {Object} - { isValid: boolean, errors: Array }
+ * @param {Array} allowedCategories - Categorías permitidas (si aplica)
+ * @returns {Object} - { isValid: boolean, errors: Object }
  */
-export const validateTransaction = (transaction, requireCategory = false) => {
-  const errors = [];
-
-  if (!validateDescription(transaction.description)) {
-    errors.push('La descripción no puede estar vacía');
+export const validateTransaction = (transaction, requireCategory = false, allowedCategories = []) => {
+  const errors = {};
+  
+  // Validar descripción
+  const descValidation = validateDescription(transaction.description);
+  if (!descValidation.isValid) {
+    errors.description = descValidation.error;
   }
-
-  if (!validateAmount(transaction.amount)) {
-    errors.push('La cantidad debe ser mayor a 0');
+  
+  // Validar monto
+  const amountValidation = validateAmount(transaction.amount);
+  if (!amountValidation.isValid) {
+    errors.amount = amountValidation.error;
   }
-
-  if (requireCategory && !transaction.category) {
-    errors.push('Debe seleccionar una categoría');
+  
+  // Validar categoría si es requerida
+  if (requireCategory) {
+    const catValidation = validateCategory(transaction.category, allowedCategories);
+    if (!catValidation.isValid) {
+      errors.category = catValidation.error;
+    }
   }
-
+  
+  // Validar fecha si existe
+  if (transaction.date) {
+    const dateValidation = validateDate(transaction.date);
+    if (!dateValidation.isValid) {
+      errors.date = dateValidation.error;
+    }
+  }
+  
   return {
-    isValid: errors.length === 0,
+    isValid: Object.keys(errors).length === 0,
     errors,
   };
 };
