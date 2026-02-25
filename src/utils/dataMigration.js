@@ -110,15 +110,23 @@ export async function migrateFromLocalStorage() {
       }
     }
 
-    const transactionsToInsert = validTransactions.map(tx => ({
-      id: tx.id,
-      user_id: user.id,
-      description: tx.description,
-      amount: tx.amount,
-      category: tx.category || null,
-      type: tx.type || (tx.category ? TRANSACTION_TYPES.EXPENSE : TRANSACTION_TYPES.INCOME),
-      date: toISODate(tx.date),
-    }))
+    const transactionsToInsert = validTransactions.map(tx => {
+      // Si el ID es un número (timestamp antiguo), generar un UUID nuevo
+      let id = tx.id;
+      if (typeof id === 'number' || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        id = crypto.randomUUID();
+      }
+      
+      return {
+        id: id,
+        user_id: user.id,
+        description: tx.description,
+        amount: tx.amount,
+        category: tx.category || null,
+        type: tx.type || (tx.category ? TRANSACTION_TYPES.EXPENSE : TRANSACTION_TYPES.INCOME),
+        date: toISODate(tx.date),
+      };
+    });
 
     const { error } = await supabase
       .from('transactions')

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useTransactions } from './hooks/useTransactions';
+import { STORAGE_KEYS } from './constants/categories';
 import { TransactionForm } from './components/Transactions/TransactionForm';
 import { TransactionList } from './components/Transactions/TransactionList';
 import { BalanceCard } from './components/Dashboard/BalanceCard';
@@ -18,9 +19,9 @@ import { BalanceDonutChart } from './components/Charts/BalanceDonutChart';
 import { TrendLineChart } from './components/Charts/TrendLineChart';
 import { CategoryBarChart } from './components/Charts/CategoryBarChart';
 import { ComparativeChart } from './components/Charts/ComparativeChart';
-// COMPONENTES DE IA - HABILITADOS
-import { AIInsightsPanel, AIAlerts, PredictiveChart } from './components/AI';
-import { useAIInsights } from './hooks/useAIInsights';
+// COMPONENTES DE IA - HABILITADOS CON GEMINI GRATIS
+import { AIInsightsPanel, AIAlerts, PredictiveChart, AIProviderStatus } from './components/AI';
+import { useAIInsights } from './hooks/useAIInsightsMulti';
 // FEATURES PREMIUM
 import { GoalManager } from './features/goals/GoalManager';
 import { ExportManager } from './features/export/ExportManager';
@@ -47,6 +48,9 @@ function AppContent() {
     alert,
     addIncome,
     addExpense,
+    addBulkTransactions,
+    updateIncome,
+    updateExpense,
     removeIncome,
     removeExpense,
     showAlert,
@@ -76,8 +80,8 @@ function AppContent() {
     ...expenses.map(expense => ({ ...expense, type: 'expense' }))
   ];
 
-  // Hook de IA para análisis financiero - DESHABILITADO (requiere VITE_ANTHROPIC_API_KEY)
-  // const aiInsights = useAIInsights(allTransactions);
+  // Hook de IA con multi-proveedores (Gemini, Groq, Claude, Ollama)
+  const aiInsights = useAIInsights(allTransactions);
 
   // Funciones para tarjetas de crédito
   const handleAddCard = (card) => {
@@ -156,12 +160,28 @@ function AppContent() {
     }
   };
 
+  // Handler para importación masiva (bulk)
+  const handleBulkImportTransaction = async (transactions) => {
+    try {
+      console.log('🚀 Iniciando importación masiva:', transactions.length, 'transacciones');
+      
+      // Usar la función de bulk del hook
+      const result = addBulkTransactions(transactions);
+      
+      console.log('✅ Resultado de importación masiva:', result);
+      return result;
+    } catch (error) {
+      console.error('Error en handleBulkImportTransaction:', error);
+      throw error;
+    }
+  };
+
   // Handler para limpiar todas las transacciones
   const handleClearAllTransactions = () => {
     if (window.confirm('⚠️ ¿Estás seguro de eliminar TODAS las transacciones? Esta acción no se puede deshacer.')) {
-      // Limpiar localStorage directamente
-      localStorage.removeItem('budget-app-incomes');
-      localStorage.removeItem('budget-app-expenses');
+      // Limpiar localStorage usando las claves correctas
+      localStorage.removeItem(STORAGE_KEYS.INCOMES);
+      localStorage.removeItem(STORAGE_KEYS.EXPENSES);
       
       // Recargar la página para reflejar los cambios
       window.location.reload();
@@ -352,15 +372,16 @@ function AppContent() {
             creditCardDebt={creditCards.reduce((sum, card) => sum + card.debt, 0)}
           />
 
+          {/* 🤖 ESTADO DE PROVEEDORES DE IA - MUESTRA GEMINI, GROQ, ETC */}
+          <AIProviderStatus />
+
           {/* ✅ PANEL DE ANÁLISIS FINANCIERO CON IA */}
-          {/* TEMPORALMENTE DESHABILITADO - Necesita VITE_ANTHROPIC_API_KEY
           <AIInsightsPanel
             analysis={aiInsights.analysis}
             loading={aiInsights.analyzing}
             error={aiInsights.analysisError}
             onAnalyze={() => aiInsights.runAnalysis({ totalIncome, totalExpenses, balance })}
           />
-          */}
 
           {/* FORMULARIOS PARA AGREGAR TRANSACCIONES */}
           <TransactionForm
@@ -374,6 +395,8 @@ function AppContent() {
             expenses={expenses}
             onRemoveIncome={removeIncome}
             onRemoveExpense={removeExpense}
+            onUpdateIncome={updateIncome}
+            onUpdateExpense={updateExpense}
           />
 
           {/* BOTÓN PARA LIMPIAR TODAS LAS TRANSACCIONES */}
@@ -480,7 +503,10 @@ function AppContent() {
           />
 
           {/* 📤 IMPORTADOR CSV - Carga masiva de transacciones */}
-          <ImportManager onImport={handleImportTransaction} />
+          <ImportManager 
+            onImport={handleImportTransaction}
+            onBulkImport={handleBulkImportTransaction}
+          />
         </div>
 
         {/* Footer */}

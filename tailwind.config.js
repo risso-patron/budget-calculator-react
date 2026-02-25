@@ -46,6 +46,9 @@ export default {
         'card-hover': '0 12px 35px rgba(0, 0, 0, 0.15)',
         'xl': '0 20px 40px rgba(0, 0, 0, 0.1)',
       },
+      scale: {
+        '102': '1.02',
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'slide-in': 'slideIn 0.3s ease-out',
