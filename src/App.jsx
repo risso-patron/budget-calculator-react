@@ -93,6 +93,64 @@ function AppContent() {
   // Hook de IA con multi-proveedores (Gemini, Groq, Claude, Ollama)
   const aiInsights = useAIInsights(allTransactions);
 
+  // ── Tabs y filtro de período ─────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState('resumen');
+  const [selectedYear, setSelectedYear] = useState(null);
+
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    [...incomes, ...expenses].forEach(t => {
+      if (t.date) years.add(new Date(t.date + 'T12:00:00').getFullYear());
+    });
+    return [...years].sort((a, b) => b - a);
+  }, [incomes, expenses]);
+
+  const filteredIncomes = useMemo(() =>
+    selectedYear
+      ? incomes.filter(t => t.date && new Date(t.date + 'T12:00:00').getFullYear() === selectedYear)
+      : incomes,
+  [incomes, selectedYear]);
+
+  const filteredExpenses = useMemo(() =>
+    selectedYear
+      ? expenses.filter(t => t.date && new Date(t.date + 'T12:00:00').getFullYear() === selectedYear)
+      : expenses,
+  [expenses, selectedYear]);
+
+  const filteredTotalIncome   = useMemo(() => filteredIncomes.reduce((s, t)  => s + t.amount, 0), [filteredIncomes]);
+  const filteredTotalExpenses = useMemo(() => filteredExpenses.reduce((s, t) => s + t.amount, 0), [filteredExpenses]);
+  const filteredBalance = filteredTotalIncome - filteredTotalExpenses;
+
+  // Datos para sparklines — últimos 6 meses con actividad real
+  const sparklineData = useMemo(() => {
+    // Recopilar todos los meses que tienen al menos una transacción
+    const monthSet = new Set();
+    [...filteredIncomes, ...filteredExpenses].forEach(t => {
+      if (t.date) monthSet.add(t.date.substring(0, 7));
+    });
+
+    // Tomar los últimos 6 meses con datos, ordenados
+    const activeMonths = [...monthSet].sort().slice(-6);
+
+    if (activeMonths.length === 0) return [];
+
+    const months = {};
+    activeMonths.forEach(key => {
+      months[key] = { mes: key, ingresos: 0, gastos: 0 };
+    });
+
+    filteredIncomes.forEach(t => {
+      const key = t.date?.substring(0, 7);
+      if (months[key]) months[key].ingresos += t.amount;
+    });
+    filteredExpenses.forEach(t => {
+      const key = t.date?.substring(0, 7);
+      if (months[key]) months[key].gastos += t.amount;
+    });
+
+    return Object.values(months);
+  }, [filteredIncomes, filteredExpenses]);
+
   // Funciones para tarjetas de crédito
   const handleAddCard = (card) => {
     setCreditCards([...creditCards, card]);
@@ -323,198 +381,219 @@ function AppContent() {
       {/* Container principal */}
       <div className="max-w-7xl mx-auto">
         {/* Header con Profile Menu */}
-        <header className="bg-gradient-dark dark:bg-gray-800 text-white rounded-2xl p-8 mb-8 shadow-xl">
-          <div className="flex justify-between items-center">
-            <div className="flex-1 text-center">
-              <h1 className="text-4xl md:text-5xl font-light mb-3">
+        <header className="bg-gradient-dark dark:bg-gray-800 text-white rounded-2xl px-6 pt-6 pb-4 mb-8 shadow-xl">
+          <div className="flex justify-between items-start gap-4">
+            {/* Título + tabs */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl md:text-4xl font-light mb-1 truncate">
                 Calculadora de Presupuesto Personal
               </h1>
-              <p className="text-lg opacity-90">
+              <p className="text-sm opacity-70 mb-4">
                 Gestiona tus finanzas personales de manera inteligente con IA
               </p>
+              {/* Tabs de navegación */}
+              <div className="flex gap-1 bg-white/10 rounded-xl p-1 w-fit">
+                {[
+                  { id: 'resumen',      label: 'Resumen',      icon: '📊' },
+                  { id: 'graficos',     label: 'Gráficos',     icon: '📈' },
+                  { id: 'herramientas', label: 'Herramientas', icon: '🛠️' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeTab === tab.id
+                        ? 'bg-white text-indigo-700 shadow-md'
+                        : 'text-white/75 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="ml-4 flex items-center gap-4">
-              {/* Toggle Dark Mode */}
-              <ThemeToggle />
-              
-              {/* ✅ ALERTAS DE IA */}
-              {/* TEMPORALMENTE DESHABILITADO - Necesita VITE_ANTHROPIC_API_KEY
-              <AIAlerts
-                alerts={aiInsights.alerts}
-                loading={aiInsights.checkingAnomalies}
-                onRefresh={aiInsights.checkAnomalies}
-              />
-              */}
-              <ProfileMenu />
+
+            {/* Controles derechos */}
+            <div className="flex flex-col items-end gap-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <ThemeToggle />
+                <ProfileMenu />
+              </div>
+              {/* Selector de año */}
+              {availableYears.length > 0 && (
+                <div className="flex gap-1 bg-white/10 rounded-xl p-1">
+                  <button
+                    onClick={() => setSelectedYear(null)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      selectedYear === null
+                        ? 'bg-white text-indigo-700 shadow'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    Todo
+                  </button>
+                  {availableYears.map(year => (
+                    <button
+                      key={year}
+                      onClick={() => setSelectedYear(year)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        selectedYear === year
+                          ? 'bg-white text-indigo-700 shadow'
+                          : 'text-white/70 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         {/* Main content grid */}
         <div className="space-y-8">
-          {/* Card de balance */}
-          <BalanceCard
-            totalIncome={totalIncome}
-            totalExpenses={totalExpenses}
-            balance={balance}
-            creditCardDebt={creditCards.reduce((sum, card) => sum + card.debt, 0)}
-          />
 
-          {/* 🤖 ESTADO DE PROVEEDORES DE IA - MUESTRA GEMINI, GROQ, ETC */}
-          <AIProviderStatus />
+          {/* ── TAB: RESUMEN ──────────────────────────────────────────────── */}
+          {activeTab === 'resumen' && <>
+            <BalanceCard
+              totalIncome={filteredTotalIncome}
+              totalExpenses={filteredTotalExpenses}
+              balance={filteredBalance}
+              creditCardDebt={creditCards.reduce((sum, card) => sum + card.debt, 0)}
+              sparklineData={sparklineData}
+            />
 
-          {/* ✅ PANEL DE ANÁLISIS FINANCIERO CON IA */}
-          <AIInsightsPanel
-            analysis={aiInsights.analysis}
-            loading={aiInsights.analyzing}
-            error={aiInsights.analysisError}
-            onAnalyze={() => aiInsights.runAnalysis({ totalIncome, totalExpenses, balance })}
-          />
+            <AIProviderStatus />
 
-          {/* FORMULARIOS PARA AGREGAR TRANSACCIONES */}
-          <TransactionForm
-            onAddIncome={handleAddIncome}
-            onAddExpense={handleAddExpense}
-          />
+            <AIInsightsPanel
+              analysis={aiInsights.analysis}
+              loading={aiInsights.analyzing}
+              error={aiInsights.analysisError}
+              onAnalyze={() => aiInsights.runAnalysis({ totalIncome: filteredTotalIncome, totalExpenses: filteredTotalExpenses, balance: filteredBalance })}
+            />
 
-          {/* LISTAS DE TRANSACCIONES - Justo después de agregar para ver resultados */}
-          <TransactionList
-            incomes={incomes}
-            expenses={expenses}
-            onRemoveIncome={(id) => openConfirm({
-              title: 'Eliminar ingreso',
-              message: '\u00bfEst\u00e1s seguro de que deseas eliminar este ingreso?',
-              onConfirm: () => { removeIncome(id); closeConfirm(); },
-            })}
-            onRemoveExpense={(id) => openConfirm({
-              title: 'Eliminar gasto',
-              message: '\u00bfEst\u00e1s seguro de que deseas eliminar este gasto?',
-              onConfirm: () => { removeExpense(id); closeConfirm(); },
-            })}
-            onUpdateIncome={updateIncome}
-            onUpdateExpense={updateExpense}
-          />
-
-          {/* BOTÓN PARA LIMPIAR TODAS LAS TRANSACCIONES */}
-          {(incomes.length > 0 || expenses.length > 0) && (
-            <div className="flex justify-center">
-              <button
-                onClick={handleClearAllTransactions}
-                className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg 
-                  shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 
-                  transition-all duration-200 flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                🧹 Limpiar Todas las Transacciones ({incomes.length + expenses.length})
-              </button>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <BalanceDonutChart
+                totalIncome={filteredTotalIncome}
+                totalExpenses={filteredTotalExpenses}
+              />
+              <CategoryChart expenses={filteredExpenses} />
             </div>
-          )}
+          </>}
 
-          {/* GESTOR DE TARJETAS DE CRÉDITO */}
-          <CreditCardManager
-            creditCards={creditCards}
-            onAddCard={handleAddCard}
-            onUpdateDebt={handleUpdateDebt}
-            onRemoveCard={handleRemoveCard}
-          />
-
-          {/* 🎯 GESTOR DE METAS FINANCIERAS */}
-          <GoalManager
-            goals={goals}
-            onAddGoal={handleAddGoal}
-            onUpdateProgress={handleUpdateGoalProgress}
-            onDeleteGoal={handleDeleteGoal}
-            currentBalance={balance}
-          />
-
-          {/* Sección de Gráficos Avanzados */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Gráfico de Dona - Balance General */}
-            <BalanceDonutChart
-              totalIncome={totalIncome}
-              totalExpenses={totalExpenses}
+          {/* ── TAB: GRÁFICOS ─────────────────────────────────────────────── */}
+          {activeTab === 'graficos' && <>
+            <TrendLineChart
+              incomes={filteredIncomes}
+              expenses={filteredExpenses}
             />
 
-            {/* Gráfico de Categorías Original (mejorado) */}
-            <CategoryChart categoryAnalysis={categoryAnalysis} />
-          </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <CategoryBarChart
+                categoryAnalysis={categoryAnalysis}
+                topN={5}
+              />
+              <ComparativeChart
+                incomes={filteredIncomes}
+                expenses={filteredExpenses}
+              />
+            </div>
 
-          {/* Gráfico de Tendencias - Ancho completo */}
-          <TrendLineChart
-            incomes={incomes}
-            expenses={expenses}
-          />
-
-          {/* ✅ GRÁFICO DE PREDICCIONES CON IA */}
-          {/* TEMPORALMENTE DESHABILITADO - Necesita VITE_ANTHROPIC_API_KEY
-          {monthlyData.length >= 2 && (
-            <PredictiveChart
-              predictions={aiInsights.predictions}
-              loading={aiInsights.predicting}
-              error={aiInsights.predictionsError}
-              onPredict={() => aiInsights.predictExpenses(monthlyData)}
-              historicalData={monthlyData}
-            />
-          )}
-          */}
-
-          {/* Gráficos de Barras y Comparativa */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Top 5 Categorías de Gasto */}
-            <CategoryBarChart
-              categoryAnalysis={categoryAnalysis}
-              topN={5}
+            <MonthlyCashFlowChart
+              incomes={filteredIncomes}
+              expenses={filteredExpenses}
+              months={6}
             />
 
-            {/* Comparativa Mensual */}
-            <ComparativeChart
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <SpendingByDayChart expenses={filteredExpenses} />
+              <TopMerchantsChart expenses={filteredExpenses} topN={8} />
+            </div>
+          </>}
+
+          {/* ── TAB: HERRAMIENTAS ─────────────────────────────────────────── */}
+          {activeTab === 'herramientas' && <>
+            <TransactionForm
+              onAddIncome={handleAddIncome}
+              onAddExpense={handleAddExpense}
+            />
+
+            <TransactionList
               incomes={incomes}
               expenses={expenses}
+              onRemoveIncome={(id) => openConfirm({
+                title: 'Eliminar ingreso',
+                message: '\u00bfEst\u00e1s seguro de que deseas eliminar este ingreso?',
+                onConfirm: () => { removeIncome(id); closeConfirm(); },
+              })}
+              onRemoveExpense={(id) => openConfirm({
+                title: 'Eliminar gasto',
+                message: '\u00bfEst\u00e1s seguro de que deseas eliminar este gasto?',
+                onConfirm: () => { removeExpense(id); closeConfirm(); },
+              })}
+              onUpdateIncome={updateIncome}
+              onUpdateExpense={updateExpense}
             />
-          </div>
 
-          {/* Flujo de Caja Mensual - ancho completo */}
-          <MonthlyCashFlowChart
-            incomes={incomes}
-            expenses={expenses}
-            months={6}
-          />
+            {(incomes.length > 0 || expenses.length > 0) && (
+              <div className="flex justify-center">
+                <button
+                  onClick={handleClearAllTransactions}
+                  className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg 
+                    shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 
+                    transition-all duration-200 flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  🧹 Limpiar Todas las Transacciones ({incomes.length + expenses.length})
+                </button>
+              </div>
+            )}
 
-          {/* Día de la semana + Top Comercios */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <SpendingByDayChart expenses={expenses} />
-            <TopMerchantsChart expenses={expenses} topN={8} />
-          </div>
+            <CreditCardManager
+              creditCards={creditCards}
+              onAddCard={handleAddCard}
+              onUpdateDebt={handleUpdateDebt}
+              onRemoveCard={handleRemoveCard}
+            />
 
-          {/* DASHBOARD DE GAMIFICACIÓN - Al final como recompensa */}
-          <GamificationDashboard
-            currentLevel={achievements.currentLevel}
-            totalPoints={achievements.totalPoints}
-            pointsForNext={achievements.pointsForNext}
-            levelProgress={achievements.levelProgress}
-            currentStreak={achievements.stats.currentStreak}
-            longestStreak={achievements.stats.longestStreak}
-            unlockedAchievements={achievements.unlockedAchievements}
-            isAchievementUnlocked={achievements.isAchievementUnlocked}
-          />
+            <GoalManager
+              goals={goals}
+              onAddGoal={handleAddGoal}
+              onUpdateProgress={handleUpdateGoalProgress}
+              onDeleteGoal={handleDeleteGoal}
+              currentBalance={balance}
+            />
 
-          {/* 📥 EXPORTADOR E IMPORTADOR DE DATOS */}
-          <ExportManager
-            incomes={incomes}
-            expenses={expenses}
-            categoryAnalysis={categoryAnalysis}
-            totalIncome={totalIncome}
-            totalExpenses={totalExpenses}
-            balance={balance}
-          />
+            <GamificationDashboard
+              currentLevel={achievements.currentLevel}
+              totalPoints={achievements.totalPoints}
+              pointsForNext={achievements.pointsForNext}
+              levelProgress={achievements.levelProgress}
+              currentStreak={achievements.stats.currentStreak}
+              longestStreak={achievements.stats.longestStreak}
+              unlockedAchievements={achievements.unlockedAchievements}
+              isAchievementUnlocked={achievements.isAchievementUnlocked}
+            />
 
-          {/* 📤 IMPORTADOR CSV - Carga masiva de transacciones */}
-          <ImportManager 
-            onImport={handleImportTransaction}
-            onBulkImport={handleBulkImportTransaction}
-          />
+            <ExportManager
+              incomes={incomes}
+              expenses={expenses}
+              categoryAnalysis={categoryAnalysis}
+              totalIncome={totalIncome}
+              totalExpenses={totalExpenses}
+              balance={balance}
+            />
+
+            <ImportManager
+              onImport={handleImportTransaction}
+              onBulkImport={handleBulkImportTransaction}
+            />
+          </>}
+
         </div>
 
         {/* Footer */}
