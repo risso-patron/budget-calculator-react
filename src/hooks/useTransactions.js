@@ -10,8 +10,8 @@ import { addAmounts, subtractAmounts, calculatePercentage } from '../utils/curre
  */
 export const useTransactions = () => {
   // Estados en localStorage
-  const [incomes, setIncomes] = useLocalStorage(STORAGE_KEYS.INCOMES, []);
-  const [expenses, setExpenses] = useLocalStorage(STORAGE_KEYS.EXPENSES, []);
+  const [incomes, setIncomes, refreshIncomes] = useLocalStorage(STORAGE_KEYS.INCOMES, []);
+  const [expenses, setExpenses, refreshExpenses] = useLocalStorage(STORAGE_KEYS.EXPENSES, []);
   
   // Estados locales
   const [filter, setFilter] = useState('all'); // 'all', 'income', 'expense'
@@ -130,24 +130,29 @@ export const useTransactions = () => {
   }, [setExpenses, showAlert]);
 
   /**
-   * Elimina un ingreso
+   * Elimina un ingreso (sin confirm nativo — la confirmaci\u00f3n se maneja en UI)
    */
   const removeIncome = useCallback((id) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
-      setIncomes(prev => prev.filter(income => income.id !== id));
-      showAlert('success', 'Ingreso eliminado');
-    }
+    setIncomes(prev => prev.filter(income => income.id !== id));
+    showAlert('success', 'Ingreso eliminado');
   }, [setIncomes, showAlert]);
 
   /**
-   * Elimina un gasto
+   * Elimina un gasto (sin confirm nativo — la confirmaci\u00f3n se maneja en UI)
    */
   const removeExpense = useCallback((id) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
-      setExpenses(prev => prev.filter(expense => expense.id !== id));
-      showAlert('success', 'Gasto eliminado');
-    }
+    setExpenses(prev => prev.filter(expense => expense.id !== id));
+    showAlert('success', 'Gasto eliminado');
   }, [setExpenses, showAlert]);
+
+  /**
+   * Elimina todas las transacciones (ingresos y gastos)
+   */
+  const clearAll = useCallback(() => {
+    setIncomes([]);
+    setExpenses([]);
+    showAlert('success', 'Todas las transacciones eliminadas');
+  }, [setIncomes, setExpenses, showAlert]);
 
   /**
    * Agrega múltiples transacciones en lote (para importación masiva)
@@ -262,6 +267,15 @@ export const useTransactions = () => {
     return allTransactions;
   }, [incomes, expenses, filter]);
 
+  /**
+   * Fuerza re-lectura de ingresos y gastos desde localStorage.
+   * Usado tras operaciones externas (ej: migración a Supabase).
+   */
+  const refreshTransactions = useCallback(() => {
+    refreshIncomes();
+    refreshExpenses();
+  }, [refreshIncomes, refreshExpenses]);
+
   return {
     // Estados
     incomes,
@@ -277,6 +291,8 @@ export const useTransactions = () => {
     updateExpense,
     removeIncome,
     removeExpense,
+    clearAll,
+    refreshTransactions,
     setFilter,
     showAlert,
     

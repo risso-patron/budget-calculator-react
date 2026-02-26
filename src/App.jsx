@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useTransactions } from './hooks/useTransactions';
+import { useLocalStorage } from './hooks/useLocalStorage';
 import { STORAGE_KEYS } from './constants/categories';
 import { TransactionForm } from './components/Transactions/TransactionForm';
 import { TransactionList } from './components/Transactions/TransactionList';
 import { BalanceCard } from './components/Dashboard/BalanceCard';
 import { CategoryChart } from './components/Dashboard/CategoryChart';
 import { Alert } from './components/Shared/Alert';
+import { ConfirmDialog } from './components/Shared/ConfirmDialog';
 import { ThemeToggle } from './components/Shared/ThemeToggle';
 import { ProfileMenu } from './components/Auth/ProfileMenu';
 import MigrationDialog from './components/MigrationDialog';
@@ -19,6 +21,9 @@ import { BalanceDonutChart } from './components/Charts/BalanceDonutChart';
 import { TrendLineChart } from './components/Charts/TrendLineChart';
 import { CategoryBarChart } from './components/Charts/CategoryBarChart';
 import { ComparativeChart } from './components/Charts/ComparativeChart';
+import { MonthlyCashFlowChart } from './components/Charts/MonthlyCashFlowChart';
+import { SpendingByDayChart } from './components/Charts/SpendingByDayChart';
+import { TopMerchantsChart } from './components/Charts/TopMerchantsChart';
 // COMPONENTES DE IA - HABILITADOS CON GEMINI GRATIS
 import { AIInsightsPanel, AIAlerts, PredictiveChart, AIProviderStatus } from './components/AI';
 import { useAIInsights } from './hooks/useAIInsightsMulti';
@@ -29,8 +34,7 @@ import ImportManager from './features/import/ImportManager';
 // GAMIFICACIÓN
 import { GamificationDashboard, AchievementNotifications } from './features/gamification';
 import { useAchievements } from './hooks/gamification/useAchievements';
-// TEST DE ANIMACIONES (Temporal)
-import AnimationsTest from './pages/AnimationsTest';
+
 
 /**
  * Componente principal de la aplicación con autenticación
@@ -38,9 +42,24 @@ import AnimationsTest from './pages/AnimationsTest';
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const [showMigration, setShowMigration] = useState(false);
-  const [creditCards, setCreditCards] = useState([]);
-  const [goals, setGoals] = useState([]);
-  const [showAnimationsTest, setShowAnimationsTest] = useState(false);
+  const [creditCards, setCreditCards] = useLocalStorage(STORAGE_KEYS.CREDIT_CARDS, []);
+  const [goals, setGoals] = useLocalStorage(STORAGE_KEYS.GOALS, []);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Eliminar',
+    variant: 'danger',
+    onConfirm: null,
+  });
+
+  const closeConfirm = useCallback(() => {
+    setConfirmDialog(prev => ({ ...prev, isOpen: false, onConfirm: null }));
+  }, []);
+
+  const openConfirm = useCallback((config) => {
+    setConfirmDialog({ isOpen: true, confirmLabel: 'Eliminar', variant: 'danger', ...config });
+  }, []);
 
   const {
     incomes,
@@ -58,27 +77,18 @@ function AppContent() {
     totalExpenses,
     balance,
     categoryAnalysis,
+    clearAll,
+    refreshTransactions,
   } = useTransactions();
 
   // Hook de gamificación
   const achievements = useAchievements();
 
-  // ATAJO: Presionar Alt+A para ver página de test de animaciones
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.altKey && e.key === 'a') {
-        setShowAnimationsTest(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
-
-  // Combinar todas las transacciones para IA
-  const allTransactions = [
+  // Combinar todas las transacciones para IA (memoizado — evita objetos nuevos en cada render)
+  const allTransactions = useMemo(() => [
     ...incomes.map(income => ({ ...income, type: 'income' })),
     ...expenses.map(expense => ({ ...expense, type: 'expense' }))
-  ];
+  ], [incomes, expenses]);
 
   // Hook de IA con multi-proveedores (Gemini, Groq, Claude, Ollama)
   const aiInsights = useAIInsights(allTransactions);
@@ -115,10 +125,15 @@ function AppContent() {
   };
 
   const handleDeleteGoal = (goalId) => {
-    if (window.confirm('¿Estás seguro de eliminar esta meta?')) {
-      setGoals(goals.filter(goal => goal.id !== goalId));
-      showAlert('success', 'Meta eliminada');
-    }
+    openConfirm({
+      title: 'Eliminar meta',
+      message: '\u00bfEst\u00e1s seguro de eliminar esta meta? Esta acci\u00f3n no se puede deshacer.',
+      onConfirm: () => {
+        setGoals(goals.filter(goal => goal.id !== goalId));
+        showAlert('success', 'Meta eliminada');
+        closeConfirm();
+      },
+    });
   };
 
   // Wrappers para transacciones que registran en gamificación
@@ -178,14 +193,15 @@ function AppContent() {
 
   // Handler para limpiar todas las transacciones
   const handleClearAllTransactions = () => {
-    if (window.confirm('⚠️ ¿Estás seguro de eliminar TODAS las transacciones? Esta acción no se puede deshacer.')) {
-      // Limpiar localStorage usando las claves correctas
-      localStorage.removeItem(STORAGE_KEYS.INCOMES);
-      localStorage.removeItem(STORAGE_KEYS.EXPENSES);
-      
-      // Recargar la página para reflejar los cambios
-      window.location.reload();
-    }
+    openConfirm({
+      title: 'Limpiar todas las transacciones',
+      message: `\u00bfEst\u00e1s seguro de eliminar las ${incomes.length + expenses.length} transacciones? Esta acci\u00f3n no se puede deshacer.`,
+      confirmLabel: 'S\u00ed, eliminar todo',
+      onConfirm: () => {
+        clearAll();
+        closeConfirm();
+      },
+    });
   };
 
   // HOOK DE IA - Combinar todas las transacciones
@@ -264,21 +280,6 @@ function AppContent() {
     );
   }
 
-  // PÁGINA DE TEST DE ANIMACIONES (Alt + A para toggle)
-  if (showAnimationsTest) {
-    return (
-      <div>
-        <button
-          onClick={() => setShowAnimationsTest(false)}
-          className="fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-red-600 transition-colors"
-        >
-          ← Volver a la App
-        </button>
-        <AnimationsTest />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen p-5 md:p-8">
       {/* Diálogo de migración */}
@@ -288,7 +289,7 @@ function AppContent() {
           onComplete={(count) => {
             showAlert('success', `${count} transacciones migradas exitosamente`);
             setShowMigration(false);
-            window.location.reload();
+            refreshTransactions();
           }}
         />
       )}
@@ -302,26 +303,25 @@ function AppContent() {
         />
       )}
 
+      {/* Modal de confirmación global */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel={confirmDialog.confirmLabel}
+        variant={confirmDialog.variant}
+        onConfirm={() => confirmDialog.onConfirm?.()}
+        onCancel={closeConfirm}
+      />
+
       {/* Notificaciones de logros */}
       <AchievementNotifications
         achievements={achievements.newAchievements}
-        onRemove={(index) => {
-          const newAchievements = [...achievements.newAchievements];
-          newAchievements.splice(index, 1);
-        }}
+        onRemove={(index) => achievements.removeNewAchievement(index)}
       />
 
       {/* Container principal */}
       <div className="max-w-7xl mx-auto">
-        {/* Botón flotante para ver animaciones (DEV) */}
-        <button
-          onClick={() => setShowAnimationsTest(true)}
-          className="fixed bottom-4 right-4 z-40 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold px-6 py-3 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 flex items-center gap-2"
-          title="Ver todas las animaciones WebP (Alt + A)"
-        >
-          🎨 Animaciones
-        </button>
-
         {/* Header con Profile Menu */}
         <header className="bg-gradient-dark dark:bg-gray-800 text-white rounded-2xl p-8 mb-8 shadow-xl">
           <div className="flex justify-between items-center">
@@ -332,18 +332,6 @@ function AppContent() {
               <p className="text-lg opacity-90">
                 Gestiona tus finanzas personales de manera inteligente con IA
               </p>
-              {/* DEBUG: Contador de transacciones */}
-              <div className="mt-2 flex gap-3 text-sm">
-                <span className="px-3 py-1 bg-green-500/20 text-green-100 rounded-full">
-                  💰 {incomes.length} ingresos
-                </span>
-                <span className="px-3 py-1 bg-red-500/20 text-red-100 rounded-full">
-                  💳 {expenses.length} gastos
-                </span>
-                <span className="px-3 py-1 bg-blue-500/20 text-blue-100 rounded-full">
-                  📊 {incomes.length + expenses.length} total
-                </span>
-              </div>
             </div>
             <div className="ml-4 flex items-center gap-4">
               {/* Toggle Dark Mode */}
@@ -393,8 +381,16 @@ function AppContent() {
           <TransactionList
             incomes={incomes}
             expenses={expenses}
-            onRemoveIncome={removeIncome}
-            onRemoveExpense={removeExpense}
+            onRemoveIncome={(id) => openConfirm({
+              title: 'Eliminar ingreso',
+              message: '\u00bfEst\u00e1s seguro de que deseas eliminar este ingreso?',
+              onConfirm: () => { removeIncome(id); closeConfirm(); },
+            })}
+            onRemoveExpense={(id) => openConfirm({
+              title: 'Eliminar gasto',
+              message: '\u00bfEst\u00e1s seguro de que deseas eliminar este gasto?',
+              onConfirm: () => { removeExpense(id); closeConfirm(); },
+            })}
             onUpdateIncome={updateIncome}
             onUpdateExpense={updateExpense}
           />
@@ -449,7 +445,6 @@ function AppContent() {
           <TrendLineChart
             incomes={incomes}
             expenses={expenses}
-            days={30}
           />
 
           {/* ✅ GRÁFICO DE PREDICCIONES CON IA */}
@@ -478,6 +473,19 @@ function AppContent() {
               incomes={incomes}
               expenses={expenses}
             />
+          </div>
+
+          {/* Flujo de Caja Mensual - ancho completo */}
+          <MonthlyCashFlowChart
+            incomes={incomes}
+            expenses={expenses}
+            months={6}
+          />
+
+          {/* Día de la semana + Top Comercios */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <SpendingByDayChart expenses={expenses} />
+            <TopMerchantsChart expenses={expenses} topN={8} />
           </div>
 
           {/* DASHBOARD DE GAMIFICACIÓN - Al final como recompensa */}

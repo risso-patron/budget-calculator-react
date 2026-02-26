@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSubscription } from '../../hooks/useSubscription';
+import { ConfirmDialog } from '../Shared/ConfirmDialog';
 // import { loadStripe } from '@stripe/stripe-js';
 
 // STRIPE DESACTIVADO TEMPORALMENTE - Activa cuando tengas tu clave
@@ -13,7 +14,8 @@ const stripePromise = null; // Desactivado hasta configurar Stripe;
 export const PricingPlans = ({ onClose }) => {
   const { subscription, updateSubscription } = useSubscription();
   const [loading, setLoading] = useState(false);
-  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
+  const [billingCycle, setBillingCycle] = useState('monthly');
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
 
   const plans = [
     {
@@ -85,14 +87,8 @@ export const PricingPlans = ({ onClose }) => {
   // Manejar selección de plan
   const handleSelectPlan = async (planId) => {
     if (planId === 'free') {
-      // Downgrade a plan gratuito
-      const confirmed = window.confirm(
-        '¿Estás seguro de cambiar al plan gratuito? Perderás acceso a las características premium.'
-      );
-      if (!confirmed) return;
-
-      await updateSubscription('free');
-      if (onClose) onClose();
+      // Mostrar modal de confirmación en lugar de window.confirm
+      setShowDowngradeConfirm(true);
       return;
     }
 
@@ -296,6 +292,20 @@ export const PricingPlans = ({ onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmación de downgrade */}
+      <ConfirmDialog
+        isOpen={showDowngradeConfirm}
+        title="Cambiar al plan gratuito"
+        message="¿Estás seguro? Perderás acceso a todas las características premium."
+        confirmLabel="Sí, cambiar"
+        onConfirm={async () => {
+          setShowDowngradeConfirm(false);
+          await updateSubscription('free');
+          if (onClose) onClose();
+        }}
+        onCancel={() => setShowDowngradeConfirm(false)}
+      />
     </div>
   );
 };

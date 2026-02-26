@@ -1,64 +1,337 @@
 import { useState } from 'react';
+import { flushSync } from 'react-dom';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/loading-csv.json';
 import { useAIInsights } from '../../hooks/useAIInsightsMulti';
+
+// ─── Clave de localStorage para perfiles de bancos ───────────────────────────
+const PROFILES_KEY = 'budget_import_bank_profiles';
+
+// ─── Diccionario de aliases: campo interno → nombres posibles de columna ────
+const COLUMN_ALIASES = {
+  fecha: [
+    'fecha', 'date', 'fecha transaccion', 'fecha de transaccion',
+    'fecha operacion', 'fecha de operacion', 'fecha valor',
+    'fecha movimiento', 'fecha de movimiento', 'transaction date',
+    'fecha txn', 'fecha de pago', 'posting date', 'fecha contable',
+    'fecha proceso', 'fecha efectiva', 'settlement date',
+  ],
+  descripcion: [
+    'descripcion', 'description', 'detalle', 'concepto', 'comercio',
+    'narracion', 'narrative', 'memo', 'referencia', 'reference',
+    'nombre comercio', 'nombre de comercio', 'beneficiario',
+    'transaction description', 'details', 'merchant', 'remarks',
+    'detalle de movimiento', 'glosa', 'descripcion de movimiento',
+    'concepto del movimiento', 'descripcion del cargo',
+  ],
+  monto: [
+    'monto', 'amount', 'importe', 'valor', 'value', 'total',
+    'monto transaccion', 'transaction amount', 'suma', 'monto total',
+    'importe transaccion',
+  ],
+  debito: [
+    'debito', 'debit', 'cargo', 'cargos', 'egreso', 'egresos',
+    'retiro', 'retiros', 'withdrawal', 'salida', 'salidas',
+    'debe', 'debit amount', 'monto debito', 'debitos', 'charges',
+    'debito usd', 'importe debito', 'monto cargo', 'debito (usd)',
+  ],
+  credito: [
+    'credito', 'credit', 'abono', 'abonos', 'ingreso en cuenta',
+    'deposito', 'depositos', 'deposit', 'haber', 'credit amount',
+    'monto credito', 'creditos', 'credits', 'credito usd',
+    'importe credito', 'monto abono', 'credito (usd)',
+  ],
+  tipo: [
+    'tipo', 'type', 'tipo movimiento', 'tipo de movimiento',
+    'dc', 'd/c', 'debito credito', 'clase', 'tipo transaccion',
+  ],
+  categoria: [
+    'categoria', 'category', 'rubro', 'clasificacion', 'subcategoria',
+  ],
+};
+
+/** Detecta el separador más probable (coma, punto y coma o tabulador) */
+const detectSeparator = (text) => {
+  const firstLine = (text.split('\n')[0] || '').substring(0, 1000);
+  const semi  = (firstLine.match(/;/g)  || []).length;
+  const comma = (firstLine.match(/,/g)  || []).length;
+  const tab   = (firstLine.match(/\t/g) || []).length;
+  if (semi  > comma && semi  > tab) return ';';
+  if (tab   > comma)               return '\t';
+  return ',';
+};
+
+/** Normaliza un header: minúsculas, sin tildes, sin chars especiales */
+const normalizeHeader = (h) =>
+  h.toLowerCase()
+   .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+   .replace(/[^\w\s]/g, '')
+   .trim();
+
+/**
+ * Intenta mapear headers al esquema interno via el diccionario.
+ * @returns {Object|null} mapa campo→headerOriginal, o null si no es suficiente
+ */
+const tryPatternMapping = (normalizedHeaders, rawHeaders) => {
+  const map = {};
+  for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
+    const idx = normalizedHeaders.findIndex(h => aliases.includes(h));
+    if (idx !== -1) map[field] = rawHeaders[idx];
+  }
+  const hasFecha = !!map.fecha;
+  const hasDesc  = !!map.descripcion;
+  const hasMonto = !!map.monto || !!map.debito || !!map.credito;
+  return (hasFecha && hasDesc && hasMonto) ? map : null;
+};
+
+/** Lee perfil de banco guardado según signature de headers */
+const getSavedProfile = (normalizedHeaders) => {
+  try {
+    const profiles = JSON.parse(localStorage.getItem(PROFILES_KEY) || '{}');
+    const key = [...normalizedHeaders].sort().join('|');
+    return profiles[key] || null;
+  } catch { return null; }
+};
+
+/** Guarda perfil de banco para futuros imports */
+const saveProfile = (normalizedHeaders, columnMap, profileName) => {
+  try {
+    const profiles = JSON.parse(localStorage.getItem(PROFILES_KEY) || '{}');
+    const key = [...normalizedHeaders].sort().join('|');
+    profiles[key] = { columnMap, profileName, savedAt: new Date().toISOString() };
+    localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+  } catch { /* silencioso */ }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ImportManager({ onImport, onBulkImport }) {
   const [previewData, setPreviewData] = useState(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState(null);
   const [importStats, setImportStats] = useState(null);
-  const [autoCategorize, setAutoCategorize] = useState(true); // ✨ NUEVO: Auto-categorización activada por defecto
-  const [categorizingProgress, setCategorizingProgress] = useState(null); // ✨ NUEVO: Progreso de categorización
+  const [autoCategorize, setAutoCategorize] = useState(true);
+  const [categorizingProgress, setCategorizingProgress] = useState(null);
+
+  // Estados para detección flexible de formato bancario
+  const [rawCSVMeta, setRawCSVMeta] = useState(null); // { lines, separator, rawHeaders, normalizedHeaders }
+  const [showColumnMapper, setShowColumnMapper] = useState(false);
+  const [manualMap, setManualMap] = useState({});
+  const [saveProfileName, setSaveProfileName] = useState('');
+  const [mappingMode, setMappingMode] = useState(null); // 'template'|'profile'|'pattern'|'ai'|'manual'
+  const [loadingFile, setLoadingFile] = useState(false);
   
   // Hook de IA para auto-categorización
   const aiInsights = useAIInsights([]);
+
+  // ─── Flujo A→C→B: Patrones → IA → Manual ─────────────────────────────────────
+
+  /** Lógica central de detección: recibe texto crudo y determina qué camino tomar */
+  const tryAutoDetect = async (text) => {
+    // 1. Limpiar BOM + normalizar saltos de línea
+    let clean = text;
+    if (clean.charCodeAt(0) === 0xFEFF) clean = clean.slice(1);
+    clean = clean.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    const sep   = detectSeparator(clean);
+    const allLines = clean.split('\n').filter(l => l.trim());
+    if (allLines.length < 2) throw new Error('El archivo debe tener al menos una fila de datos');
+
+    // --- Auto-detectar la fila real de cabeceras ---
+    // Algunos extractos bancarios tienen filas de metadatos antes de los headers
+    // (nombre del banco, número de cuenta, período, etc.).
+    // Buscamos la primera fila que: tenga ≥2 columnas Y al menos una coincida
+    // con un alias conocido. Si no encontramos match, usamos la fila 0.
+    const allAliases = Object.values(COLUMN_ALIASES).flat();
+    let headerIdx = 0;
+    for (let i = 0; i < Math.min(allLines.length - 1, 10); i++) {
+      const tokens = parseCSVLineFlexible(allLines[i], sep);
+      if (tokens.length < 2) continue;
+      const normalized = tokens.map(normalizeHeader);
+      const hasKnownAlias = normalized.some(h => allAliases.includes(h));
+      if (hasKnownAlias) { headerIdx = i; break; }
+      // Segunda heurística: fila con ≥3 tokens no numéricos → candidata a header
+      const nonNumeric = tokens.filter(t => isNaN(t.replace(/[.,]/g, '')) && t.length > 0);
+      if (nonNumeric.length >= 3 && i === 0) headerIdx = 0;
+    }
+
+    // Reconstruir lines saltando las filas de metadatos
+    const lines = allLines.slice(headerIdx);
+
+    // Parsear primera línea como headers
+    // rawHAll: array completo con posiciones originales (incluye columnas vacías del banco)
+    // rawH: solo columnas con nombre (para pattern matching, IA y UI)
+    // Los índices del columnMap siempre se resuelven contra rawHAll para no desplazar posiciones
+    const rawHAll = parseCSVLineFlexible(lines[0], sep);
+    const rawH    = rawHAll.filter(h => h.trim() !== '');
+    const normH   = rawH.map(normalizeHeader);
+    // meta guarda rawHAll para el parser pero rawH para la UI
+    const meta  = { lines, separator: sep, rawHeaders: rawH, rawHeadersFull: rawHAll, normalizedHeaders: normH };
+    setRawCSVMeta(meta);
+
+    // 2. ¿Es nuestro formato plantilla estándar?
+    const stdFields = ['tipo', 'descripcion', 'monto', 'fecha'];
+    const isTemplate = stdFields.every(f => normH.includes(f));
+    if (isTemplate) {
+      const templateMap = {
+        tipo: rawH[normH.indexOf('tipo')],
+        descripcion: rawH[normH.indexOf('descripcion')],
+        monto: rawH[normH.indexOf('monto')],
+        fecha: rawH[normH.indexOf('fecha')],
+        categoria: normH.includes('categoria') ? rawH[normH.indexOf('categoria')] : undefined,
+      };
+      const parsed = parseWithColumnMap(lines, sep, rawHAll, templateMap);
+      if (parsed.length > 0) {
+        setMappingMode('template');
+        setPreviewData(parsed);
+        return;
+      }
+      console.warn('⚠️ Plantilla detectada pero 0 filas válidas — continuando...');
+    }
+
+    // 3. ¿Hay perfil guardado para este banco?
+    const profile = getSavedProfile(normH);
+    if (profile) {
+      console.log('✅ Perfil bancario guardado encontrado:', profile.profileName);
+      const parsed = parseWithColumnMap(lines, sep, rawHAll, profile.columnMap);
+      if (parsed.length > 0) {
+        setMappingMode('profile');
+        setPreviewData(parsed);
+        return;
+      }
+      console.warn('⚠️ Perfil encontrado pero 0 filas válidas — continuando...');
+    }
+
+    // 4. OPCIÓN A: Detección por patrones
+    const patternMap = tryPatternMapping(normH, rawH);
+    if (patternMap) {
+      console.log('✅ Columnas detectadas por patrones:', patternMap);
+      const parsed = parseWithColumnMap(lines, sep, rawHAll, patternMap);
+      if (parsed.length > 0) {
+        setMappingMode('pattern');
+        setPreviewData(parsed);
+        return;
+      }
+      console.warn('⚠️ Patrones detectados pero 0 filas válidas — continuando...');
+    }
+
+    // 5. OPCIÓN C: Detección por IA (si hay API key)
+    const providers = aiInsights.checkProviders();
+    if (providers.length > 0) {
+      try {
+        setError('🤖 Analizando formato del archivo con IA...');
+        const sampleRows = lines.slice(1, 4).map(l => parseCSVLineFlexible(l, sep));
+        const aiMap = await aiInsights.mapImportColumns(rawH, sampleRows);
+        setError(null);
+        if (aiMap && Object.keys(aiMap).length >= 2) {
+          console.log('✅ IA detectó el mapa de columnas:', aiMap);
+          const parsed = parseWithColumnMap(lines, sep, rawHAll, aiMap);
+          if (parsed.length > 0) {
+            setMappingMode('ai');
+            setPreviewData(parsed);
+            return;
+          }
+          console.warn('⚠️ IA mapeó columnas pero no hay filas válidas — pasando a manual');
+        }
+      } catch (aiErr) {
+        console.warn('⚠️ IA no pudo mapear:', aiErr.message);
+        setError(null);
+      }
+    }
+
+    // 6. OPCIÓN B: Mapeador manual
+    console.log('📋 Mostrando mapeador manual de columnas');
+    setMappingMode('manual');
+    setManualMap({});
+    setShowColumnMapper(true);
+  };
 
   // Manejar selección de archivo
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    console.log('📁 Archivo seleccionado:', file.name, 'Tamaño:', file.size, 'bytes');
-
-    // Verificar extensión
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
       setError('Solo se aceptan archivos .csv o .txt');
       return;
     }
 
-    setError(null);
-    setPreviewData(null);
-    setImportStats(null);
+    // flushSync fuerza a React a pintar el spinner de forma síncrona
+    // ANTES de que el hilo principal empiece a leer el archivo.
+    // Es la única API que garantiza un render real antes de trabajo CPU.
+    flushSync(() => {
+      setError(null);
+      setPreviewData(null);
+      setImportStats(null);
+      setShowColumnMapper(false);
+      setMappingMode(null);
+      setRawCSVMeta(null);
+      setManualMap({});
+      setSaveProfileName('');
+      setLoadingFile(true);
+    });
 
-    // Leer y parsear el archivo
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        console.log('📖 Leyendo archivo...');
-        const text = event.target.result;
-        console.log('📄 Contenido leído:', text.substring(0, 200) + '...');
-        console.log('📏 Longitud total:', text.length, 'caracteres');
-        
-        const parsed = parseCSV(text);
-        console.log('✅ Parseado exitoso:', parsed.length, 'transacciones');
-        console.log('🔍 Primera transacción:', parsed[0]);
-        
-        setPreviewData(parsed);
-      } catch (err) {
-        console.error('❌ Error al parsear:', err);
-        setError(`Error al leer el archivo: ${err.message}`);
+    const MIN_SPIN_MS = 900;
+    const startTime = Date.now();
+
+    const finishLoading = () => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, MIN_SPIN_MS - elapsed);
+      if (remaining > 0) {
+        setTimeout(() => setLoadingFile(false), remaining);
+      } else {
+        setLoadingFile(false);
       }
     };
-    
-    reader.onerror = (error) => {
-      console.error('❌ Error al leer archivo:', error);
-      setError('Error al leer el archivo. Intenta guardarlo de nuevo como CSV UTF-8.');
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        await tryAutoDetect(event.target.result);
+      } catch (err) {
+        setError(`Error al leer el archivo: ${err.message}`);
+      } finally {
+        finishLoading();
+      }
     };
-    
+    reader.onerror = () => {
+      finishLoading();
+      setError('Error al leer el archivo. Guárdalo como CSV UTF-8.');
+    };
     reader.readAsText(file, 'UTF-8');
   };
 
+  /** Aplica el mapa definido manualmente y opcionalmente guarda el perfil del banco */
+  const applyManualMap = () => {
+    if (!rawCSVMeta) return;
+    const { lines, separator, rawHeaders, rawHeadersFull, normalizedHeaders } = rawCSVMeta;
+    const fullHeaders = rawHeadersFull || rawHeaders; // compatibilidad hacia atrás
+    const hasFecha = !!manualMap.fecha;
+    const hasDesc  = !!manualMap.descripcion;
+    const hasMonto = !!manualMap.monto || !!manualMap.debito || !!manualMap.credito;
+    if (!hasFecha || !hasDesc || !hasMonto) {
+      setError('Asigna al menos: Fecha, Descripción y un campo de monto.');
+      return;
+    }
+    if (saveProfileName.trim()) {
+      saveProfile(normalizedHeaders, manualMap, saveProfileName.trim());
+    }
+    try {
+      const parsed = parseWithColumnMap(lines, separator, fullHeaders, manualMap);
+      if (parsed.length === 0) {
+        setError('No se encontraron filas válidas con el mapa aplicado. Verifica que las columnas seleccionadas contengan datos correctos.');
+        return;
+      }
+      setError(null);
+      setShowColumnMapper(false);
+      setPreviewData(parsed);
+    } catch (err) {
+      setError(`Error al aplicar el mapa: ${err.message}`);
+    }
+  };
+
   // Parsear CSV manualmente (sin dependencias externas)
-  const parseCSV = (text) => {
+  const _parseCSV = (text) => {
     // Limpiar BOM (Byte Order Mark) y normalizar el texto
     let cleanText = text;
     
@@ -216,6 +489,144 @@ export default function ImportManager({ onImport, onBulkImport }) {
     
     // Si no es formato Excel, devolver como está
     return dateStr;
+  };
+
+  /** Parsea una línea CSV respetando comillas y cualquier separador */
+  const parseCSVLineFlexible = (line, separator = ',') => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const next = line[i + 1];
+      if (char === '"') {
+        if (inQuotes && next === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (char === separator && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  /**
+   * Parsea el CSV usando un mapa de columnas flexible.
+   * Soporta: columna única de monto, columnas separadas débito/crédito,
+   * inferencia de tipo por signo del monto, y columna tipo explícita.
+   */
+  /** Convierte un string numérico bancario a float, manejando formatos locales.
+   * Soporta: "1,234.56" / "1.234,56" / "($4.00)" / "$2.00" / "B/.1,234.56" */
+  const parseAmount = (raw) => {
+    if (!raw) return 0;
+    let s = raw.toString().trim();
+    // Paréntesis = negativo: ($4.00) → -4.00
+    const negative = s.startsWith('(') && s.endsWith(')');
+    s = s.replace(/[()]/g, '');
+    // Quitar símbolos de moneda: $, €, B/., ₡, £, ¥, etc.
+    s = s.replace(/[$€£¥₡]|B\/\./g, '').trim();
+    // Detectar separador decimal: si hay coma Y punto, el último es el decimal
+    const hasComma = s.includes(',');
+    const hasDot   = s.includes('.');
+    if (hasComma && hasDot) {
+      // e.g. "1,234.56" → punto decimal  |  "1.234,56" → coma decimal
+      if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+      } else {
+        s = s.replace(/,/g, '');
+      }
+    } else if (hasComma && !hasDot) {
+      // "1234,56" → coma decimal  |  "1,234" → coma de miles
+      const parts = s.split(',');
+      s = parts.length === 2 && parts[1].length <= 2
+        ? s.replace(',', '.')   // decimal
+        : s.replace(/,/g, ''); // miles
+    }
+    // Quitar espacios de miles: "1 234 56" → "123456"
+    s = s.replace(/\s/g, '');
+    const val = parseFloat(s) || 0;
+    return negative ? -Math.abs(val) : val;
+  };
+
+  const parseWithColumnMap = (lines, separator, rawHeaders, columnMap) => {
+    // Construir índice header → posición (búsqueda exacta + fallback insensible a mayúsculas)
+    const idx = {};
+    rawHeaders.forEach((h, i) => { idx[h] = i; });
+    // índice normalizado para cuando la IA devuelve nombres en minúsculas
+    const idxLower = {};
+    rawHeaders.forEach((h, i) => { idxLower[h.toLowerCase().trim()] = i; });
+
+    const resolveCol = (colName) => {
+      if (colName === undefined) return undefined;
+      if (idx[colName] !== undefined) return idx[colName];
+      return idxLower[colName.toLowerCase().trim()];
+    };
+
+    const getVal = (row, field) => {
+      const colName = columnMap[field];
+      const pos = resolveCol(colName);
+      return pos !== undefined ? (row[pos] || '').trim() : '';
+    };
+
+    const data = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLineFlexible(lines[i], separator);
+      if (values.length < 2) continue;
+
+      // — Fecha —
+      let fecha = getVal(values, 'fecha');
+      fecha = convertExcelDate(fecha);
+      if (fecha.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        const p = fecha.split('/');
+        fecha = `${p[0].padStart(2,'0')}/${p[1].padStart(2,'0')}/${p[2]}`;
+      }
+
+      // — Descripción —
+      const descripcion = getVal(values, 'descripcion');
+
+      // — Monto y Tipo —
+      let monto, tipo;
+
+      if (columnMap.monto) {
+        // Columna única de importe
+        const raw = parseAmount(getVal(values, 'monto'));
+        monto = Math.abs(raw);
+        if (columnMap.tipo) {
+          const tipoRaw = getVal(values, 'tipo').toLowerCase();
+          tipo = /c|ingreso|abono|credito|haber/.test(tipoRaw) ? 'ingreso' : 'gasto';
+        } else {
+          tipo = raw >= 0 ? 'ingreso' : 'gasto';
+        }
+      } else {
+        // Columnas separadas débito / crédito
+        const debitoVal  = Math.abs(parseAmount(getVal(values, 'debito')));
+        const creditoVal = Math.abs(parseAmount(getVal(values, 'credito')));
+        if (creditoVal > 0) { tipo = 'ingreso'; monto = creditoVal; }
+        else                { tipo = 'gasto';   monto = debitoVal; }
+      }
+
+      // — Categoría —
+      const categoria = getVal(values, 'categoria') || '';
+
+      const row = { tipo, descripcion, monto: monto.toString(), fecha, categoria };
+      const validation = validateRow(row);
+      if (validation.valid) {
+        data.push({ ...row, rowNumber: i + 1 });
+      } else if (data.length === 0 && i <= 3) {
+        // Log diagnóstico solo para las primeras filas si nada ha pasado aún
+        console.warn(`🔍 Fila ${i + 1} rechazada (${validation.error}):`, { row, rawValues: values });
+      }
+    }
+
+    if (data.length === 0) {
+      console.warn('❌ parseWithColumnMap: 0 filas válidas. columnMap usado:', columnMap, '| Headers:', rawHeaders);
+    } else {
+      console.log(`✅ parseWithColumnMap: ${data.length} filas válidas`);
+    }
+    return data; // puede retornar [] — el llamador decide si mostrar error o mapper manual
   };
 
   // Validar una fila individual
@@ -452,46 +863,141 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
       {/* Instrucciones */}
       <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-          Formato del archivo CSV:
+          Formatos de archivo aceptados:
         </h4>
         <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
-          <li>• Primera línea: <code className="bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded">tipo,descripcion,monto,fecha,categoria</code></li>
-          <li>• <strong>Las columnas pueden estar en cualquier orden</strong> - se detectan por nombre</li>
-          <li>• Tipo: "ingreso" o "gasto" (minúsculas)</li>
-          <li>• Fecha: YYYY-MM-DD o DD/MM/YYYY</li>
-          <li>• Monto: número positivo (usar punto para decimales)</li>
-          <li>• <strong>IMPORTANTE</strong>: Guarda desde Excel como "CSV UTF-8 (delimitado por comas)"</li>
+          <li>• <strong>Extracto bancario</strong>: sube el CSV directo de tu banco — se detectan las columnas automáticamente</li>
+          <li>• <strong>Plantilla propia</strong>: columnas <code className="bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded">tipo, descripcion, monto, fecha, categoria</code></li>
+          <li>• Separador: coma <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">,</code> o punto y coma <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">;</code> (detectados automáticamente)</li>
+          <li>• Fecha: YYYY-MM-DD, DD/MM/YYYY o formato Excel (4-Dec-25)</li>
+          <li>• <strong>IMPORTANTE</strong>: Guarda como “CSV UTF-8 (delimitado por comas)” desde Excel</li>
         </ul>
       </div>
+
+      {/* Mapeador manual de columnas */}
+      {showColumnMapper && rawCSVMeta && (
+        <div className="mb-6 p-5 bg-amber-50 dark:bg-amber-900/20 rounded-xl border-2 border-amber-300 dark:border-amber-700">
+          <h4 className="font-bold text-amber-900 dark:text-amber-300 mb-1 flex items-center gap-2">
+            <span>🗂️</span> Asigna las columnas de tu banco
+          </h4>
+          <p className="text-xs text-amber-700 dark:text-amber-400 mb-4">
+            No se reconoció el formato automáticamente. Indica a qué campo corresponde cada columna de tu archivo.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {[{field:'fecha',label:'📅 Fecha',required:true},
+              {field:'descripcion',label:'📝 Descripción',required:true},
+              {field:'monto',label:'💲 Monto (columna única)',required:false},
+              {field:'debito',label:'📤 Débito / Cargo',required:false},
+              {field:'credito',label:'📥 Crédito / Abono',required:false},
+              {field:'tipo',label:'🔄 Tipo (ing/gasto)',required:false},
+              {field:'categoria',label:'🏷️ Categoría',required:false},
+            ].map(({field, label, required}) => (
+              <div key={field}>
+                <label className="block text-xs font-semibold text-amber-800 dark:text-amber-400 mb-1">
+                  {label} {required && <span className="text-red-500">*</span>}
+                </label>
+                <select
+                  value={manualMap[field] || ''}
+                  onChange={e => setManualMap(prev => ({ ...prev, [field]: e.target.value || undefined }))}
+                  className="w-full px-3 py-2 text-sm border-2 border-amber-200 dark:border-amber-700 rounded-lg
+                    focus:border-amber-500 outline-none dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">— No aplicar —</option>
+                  {rawCSVMeta.rawHeaders.map((h, hi) => (
+                    <option key={`${hi}-${h}`} value={h}>{h}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-amber-600 dark:text-amber-500 mb-3">
+            💡 Si tu banco usa columnas separadas de Débito y Crédito, asigna ambas y deja Monto vacío.
+          </p>
+
+          {/* Guardar perfil */}
+          <div className="flex items-center gap-3 mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-amber-200 dark:border-amber-700">
+            <span className="text-sm">💾</span>
+            <input
+              type="text"
+              placeholder="Nombre del banco (ej: Banco General) — opcional"
+              value={saveProfileName}
+              onChange={e => setSaveProfileName(e.target.value)}
+              className="flex-1 text-sm px-3 py-1.5 border border-amber-200 dark:border-amber-700 rounded
+                outline-none focus:border-amber-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={applyManualMap}
+              className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold
+                rounded-lg transition-colors"
+            >
+              Aplicar mapa y previsualizar
+            </button>
+            <button
+              onClick={() => { setShowColumnMapper(false); setError(null); }}
+              className="px-4 py-2.5 border-2 border-amber-300 dark:border-amber-700 text-amber-700
+                dark:text-amber-400 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Selector de archivo */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           1. Seleccionar archivo CSV:
         </label>
-        <div className="flex gap-3 items-center">
-          <input
-            type="file"
-            accept=".csv,.txt"
-            onChange={handleFileSelect}
-            className="flex-1 text-sm text-gray-500 dark:text-gray-400
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-lg file:border-0
-              file:text-sm file:font-semibold
-              file:bg-purple-50 file:text-purple-700
-              dark:file:bg-purple-900/30 dark:file:text-purple-300
-              hover:file:bg-purple-100 dark:hover:file:bg-purple-900/50
-              file:cursor-pointer cursor-pointer"
-          />
-          {previewData && previewData.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span className="font-medium">{previewData.length} transacciones detectadas</span>
+
+        {/* Spinner: reemplaza el input mientras se analiza el archivo */}
+        {loadingFile ? (
+          <div className="flex items-center gap-4 py-3 px-4 rounded-xl
+            bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800">
+            <Lottie
+              animationData={loadingAnimation}
+              loop
+              autoplay
+              style={{ width: 64, height: 64, flexShrink: 0 }}
+            />
+            <div>
+              <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                Analizando archivo…
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Detectando formato del banco
+              </p>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex gap-3 items-center">
+            <input
+              type="file"
+              accept=".csv,.txt"
+              onChange={handleFileSelect}
+              className="flex-1 text-sm text-gray-500 dark:text-gray-400
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:text-sm file:font-semibold
+                file:bg-purple-50 file:text-purple-700
+                dark:file:bg-purple-900/30 dark:file:text-purple-300
+                hover:file:bg-purple-100 dark:hover:file:bg-purple-900/50
+                file:cursor-pointer cursor-pointer"
+            />
+            {previewData && previewData.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">{previewData.length} transacciones detectadas</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Error */}
@@ -504,16 +1010,44 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
       {/* Vista previa */}
       {previewData && previewData.length > 0 && (
         <div className="mb-6 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h4 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
               2. Vista previa
             </h4>
-            <span className="text-sm font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/50 px-3 py-1 rounded-full">
-              {previewData.length} transacciones
-            </span>
+            <div className="flex flex-wrap gap-2">
+              {/* Badge: modo de detección de columnas */}
+              {mappingMode === 'template' && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
+                  📋 Plantilla estándar
+                </span>
+              )}
+              {mappingMode === 'profile' && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+                  💾 Perfil guardado
+                </span>
+              )}
+              {mappingMode === 'pattern' && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                  🎯 Detectado por patrones
+                </span>
+              )}
+              {mappingMode === 'ai' && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                  🤖 Mapeado por IA
+                </span>
+              )}
+              {mappingMode === 'manual' && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                  🗂️ Configuración manual
+                </span>
+              )}
+              <span className="text-sm font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/50 px-3 py-1 rounded-full">
+                {previewData.length} transacciones
+              </span>
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800">

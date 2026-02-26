@@ -6,7 +6,8 @@ import {
   predictNextMonthExpenses,
   detectAnomalies,
   getProviderStatus,
-  getAvailableProviders
+  getAvailableProviders,
+  mapCSVColumns,
 } from '../lib/ai-providers'
 
 /**
@@ -229,7 +230,7 @@ export const useAIInsights = (transactions = []) => {
         })
         
         successCount++
-      } catch (error) {
+      } catch {
         categorized.push({
           ...transaction,
           category: 'Otros',
@@ -242,6 +243,21 @@ export const useAIInsights = (transactions = []) => {
     console.log(`✅ Categorización completada: ${successCount} exitosas, ${errorCount} errores`)
 
     return categorized
+  }, [checkProviders])
+
+  /**
+   * Mapea columnas de un CSV bancario usando IA
+   * @param {string[]} headers - Cabeceras del CSV
+   * @param {string[][]} sampleRows - Primeras filas de datos (máx. 3)
+   * @returns {Promise<Object>} columnMap { fecha, descripcion, monto, ... }
+   */
+  const mapImportColumns = useCallback(async (headers, sampleRows) => {
+    const available = checkProviders()
+    if (available.length === 0) {
+      throw new Error('No hay proveedores de IA configurados')
+    }
+    const result = await mapCSVColumns(headers, sampleRows)
+    return result.columnMap
   }, [checkProviders])
 
   return {
@@ -265,6 +281,7 @@ export const useAIInsights = (transactions = []) => {
     runPrediction,
     checkAnomalies,
     checkProviders,
-    bulkCategorize, // NUEVA: Para importación CSV
+    bulkCategorize,
+    mapImportColumns,
   }
 }

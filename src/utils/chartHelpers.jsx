@@ -36,59 +36,48 @@ export const transformToDonutData = (totalIncome, totalExpenses) => {
  * Transforma transacciones a formato para gráfico de líneas (Tendencias)
  * Agrupa por fecha y acumula ingresos/gastos
  */
-export const transformToLineData = (incomes, expenses, days = 30) => {
-  const today = new Date();
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - days);
+export const transformToLineData = (incomes, expenses, fromDateStr, toDateStr) => {
+  const from = new Date(fromDateStr + 'T00:00:00');
+  const to   = new Date(toDateStr   + 'T00:00:00');
 
-  // Crear objeto para mapear datos por fecha
+  if (isNaN(from) || isNaN(to) || from > to) return [];
+
+  // Generar un día por cada día del rango
   const dataMap = {};
-
-  // Inicializar todos los días con valores 0
-  for (let i = 0; i <= days; i++) {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + i);
-    const dateKey = date.toISOString().split('T')[0];
+  const cursor = new Date(from);
+  while (cursor <= to) {
+    const dateKey = cursor.toISOString().split('T')[0];
     dataMap[dateKey] = {
-      date: formatDate(date, { month: 'short', day: 'numeric' }),
+      date: formatDate(new Date(cursor), { month: 'short', day: 'numeric' }),
       ingresos: 0,
       gastos: 0,
-      ingresosAcum: 0,
-      gastosAcum: 0
     };
+    cursor.setDate(cursor.getDate() + 1);
   }
 
   // Sumar ingresos por fecha
   incomes.forEach(income => {
     const dateKey = income.date || new Date().toISOString().split('T')[0];
-    if (dataMap[dateKey]) {
-      dataMap[dateKey].ingresos += income.amount;
-    }
+    if (dataMap[dateKey]) dataMap[dateKey].ingresos += income.amount;
   });
 
   // Sumar gastos por fecha
   expenses.forEach(expense => {
     const dateKey = expense.date || new Date().toISOString().split('T')[0];
-    if (dataMap[dateKey]) {
-      dataMap[dateKey].gastos += expense.amount;
-    }
+    if (dataMap[dateKey]) dataMap[dateKey].gastos += expense.amount;
   });
 
   // Convertir a array ordenado y calcular acumulados
-  const sortedData = Object.keys(dataMap)
-    .sort()
-    .map(key => dataMap[key]);
-
   let ingresosAcumulado = 0;
   let gastosAcumulado = 0;
 
-  return sortedData.map(item => {
-    ingresosAcumulado += item.ingresos;
-    gastosAcumulado += item.gastos;
+  return Object.keys(dataMap).sort().map(key => {
+    ingresosAcumulado += dataMap[key].ingresos;
+    gastosAcumulado   += dataMap[key].gastos;
     return {
-      ...item,
+      ...dataMap[key],
       ingresosAcum: ingresosAcumulado,
-      gastosAcum: gastosAcumulado
+      gastosAcum:   gastosAcumulado,
     };
   });
 };
@@ -225,4 +214,81 @@ export const CustomTooltip = ({ active, payload, label, type = 'default' }) => {
  */
 export const hasChartData = (incomes, expenses) => {
   return (incomes && incomes.length > 0) || (expenses && expenses.length > 0);
+};
+
+// ─── Nuevas transformaciones ───────────────────────────────────────────────
+
+/**
+ * Flujo de caja mensual — últimos N meses
+ * Retorna [{ mes, ingresos, gastos, ahorro, tasaAhorro }]
+ */
+export const transformToMonthlyCashFlow = (incomes = [], expenses = [], months = 6) => {
+  const now = new Date();
+  const result = [];
+
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const year  = d.getFullYear();
+    const month = d.getMonth();
+    const label = d.toLocaleDateString('es-PA', { month: 'short', year: '2-digit' });
+
+    const ingresosMes = incomes
+      .filter(t => { const td = new Date(t.date); return td.getFullYear() === year && td.getMonth() === month; })
+      .reduce((s, t) => s + (t.amount || 0), 0);
+
+    const gastosMes = expenses
+      .filter(t => { const td = new Date(t.date); return td.getFullYear() === year && td.getMonth() === month; })
+      .reduce((s, t) => s + (t.amount || 0), 0);
+
+    const ahorro = ingresosMes - gastosMes;
+    const tasaAhorro = ingresosMes > 0 ? Math.round((ahorro / ingresosMes) * 100) : 0;
+
+    result.push({ mes: label, ingresos: ingresosMes, gastos: gastosMes, ahorro, tasaAhorro });
+  }
+
+  return result;
+};
+
+/**
+ * Gastos por día de la semana
+ * Retorna [{ dia: 'Lun', monto, count }] — ordenado lunes→domingo
+ */
+export const transformToSpendingByDay = (expenses = []) => {
+  const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const order = [1, 2, 3, 4, 5, 6, 0]; // lunes primero
+  const acc = Array(7).fill(null).map(() => ({ monto: 0, count: 0 }));
+
+  expenses.forEach(t => {
+    const d = new Date(t.date);
+    if (!isNaN(d.getTime())) {
+      acc[d.getDay()].monto += t.amount || 0;
+      acc[d.getDay()].count += 1;
+    }
+  });
+
+  return order.map(i => ({
+    dia: days[i],
+    monto: Math.round(acc[i].monto * 100) / 100,
+    promedio: acc[i].count > 0 ? Math.round((acc[i].monto / acc[i].count) * 100) / 100 : 0,
+    count: acc[i].count,
+  }));
+};
+
+/**
+ * Top N descripciones/comercios por monto de gasto
+ * Retorna [{ nombre, monto, count }]
+ */
+export const transformToTopMerchants = (expenses = [], topN = 8) => {
+  const map = {};
+  expenses.forEach(t => {
+    const key = (t.description || 'Sin descripción').trim();
+    if (!map[key]) map[key] = { nombre: key, monto: 0, count: 0 };
+    map[key].monto  += t.amount || 0;
+    map[key].count  += 1;
+  });
+
+  return Object.values(map)
+    .sort((a, b) => b.monto - a.monto)
+    .slice(0, topN)
+    .map(item => ({ ...item, monto: Math.round(item.monto * 100) / 100 }));
 };

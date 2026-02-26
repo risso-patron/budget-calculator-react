@@ -242,5 +242,8 @@ export const useAchievements = () => {
     checkAchievements,
     isAchievementUnlocked,
     getAchievementsByCategory,
+    removeNewAchievement: (index) => {
+      setNewAchievements(prev => prev.filter((_, i) => i !== index));
+    },
   };
 };

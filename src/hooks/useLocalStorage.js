@@ -43,6 +43,16 @@ export const useLocalStorage = (key, initialValue) => {
     }
   };
 
+  // Fuerza una re-lectura del valor actual en localStorage
+  const refresh = () => {
+    try {
+      const item = window.localStorage.getItem(key);
+      setStoredValue(item ? JSON.parse(item) : initialValue);
+    } catch (error) {
+      console.error(`Error al refrescar localStorage key "${key}":`, error);
+    }
+  };
+
   // Sincronizar con cambios en otras pestañas/ventanas
   useEffect(() => {
     const handleStorageChange = (e) => {
@@ -59,5 +69,5 @@ export const useLocalStorage = (key, initialValue) => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [key]);
 
-  return [storedValue, setValue];
+  return [storedValue, setValue, refresh];
 };
