@@ -10,7 +10,7 @@
 - ✅ **Completamente gratis** (sin tarjeta)
 - ✅ **1,500 requests por día** (suficiente para uso personal)
 - ✅ Buena calidad de análisis financiero
-- ✅ Respuesta en 1-3 segundos
+- ✅ Respuesta en ~1 segundo (modelo `gemini-2.0-flash-lite`)
 - ✅ Activación en 2 minutos
 
 ### Cómo obtener tu API Key:
@@ -28,11 +28,13 @@
 #### Paso 3: Configurar en Budget Calculator
 1. Abre el archivo `.env` en la raíz del proyecto
 2. Agrega esta línea:
-   ```bash
+   ```env
    VITE_GOOGLE_GEMINI_API_KEY=AIzaSy...tu-clave-aqui
    ```
 3. Guarda el archivo
 4. Reinicia el servidor: `npm run dev`
+
+> ⚠️ **Windows**: No uses `echo` para editar `.env`. Ábrelo directamente en VS Code o Notepad y pega la línea.
 
 ### Límites:
 - 🔢 **1,500 requests por día** (gratis para siempre)
@@ -66,7 +68,7 @@
 #### Paso 3: Configurar
 1. Abre `.env`
 2. Agrega:
-   ```bash
+   ```env
    VITE_GROQ_API_KEY=gsk_...tu-clave-aqui
    ```
 3. Reinicia el servidor
@@ -130,7 +132,7 @@ NO necesitas agregar nada al `.env`. Ollama se detecta automáticamente cuando e
 | **Costo** | Gratis | Gratis | Gratis |
 | **Tarjeta requerida** | ❌ No | ❌ No | ❌ No |
 | **Límite diario** | 1,500 | 14,400 | ∞ |
-| **Velocidad** | 3s | 0.5s | 2-5s |
+| **Velocidad** | ~1s | 0.5s | 2-5s |
 | **Calidad** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
 | **Requiere Internet** | ✅ Sí | ✅ Sí | ❌ No |
 | **Requiere instalación** | ❌ No | ❌ No | ✅ Sí |
@@ -162,31 +164,28 @@ El sistema está configurado para usar **fallback automático**:
 
 ### Opción Express: Solo Gemini
 
-```bash
-# 1. Ve a https://aistudio.google.com/apikey
-# 2. Copia tu API Key
-# 3. Pega en .env:
+1. Ve a <https://aistudio.google.com/apikey> y copia tu API Key
+2. Abre `.env` en VS Code y agrega:
 
-echo "VITE_GOOGLE_GEMINI_API_KEY=AIzaSy...tu-clave" >> .env
-
-# 4. Reinicia
-npm run dev
+```env
+VITE_GOOGLE_GEMINI_API_KEY=AIzaSy...tu-clave
 ```
+
+3. Reinicia: `npm run dev`
 
 ### Opción Completa: Gemini + Groq
 
-```bash
-# 1. Obtén ambas keys (5 minutos):
-#    - Gemini: https://aistudio.google.com/apikey
-#    - Groq: https://console.groq.com/keys
+1. Obtén ambas keys (5 minutos):
+   - Gemini: <https://aistudio.google.com/apikey>
+   - Groq: <https://console.groq.com/keys>
+2. Abre `.env` y agrega las dos líneas:
 
-# 2. Agrega ambas al .env:
+```env
 VITE_GOOGLE_GEMINI_API_KEY=AIzaSy...
 VITE_GROQ_API_KEY=gsk_...
-
-# 3. Reinicia
-npm run dev
 ```
+
+3. Reinicia: `npm run dev`
 
 ---
 
@@ -197,21 +196,22 @@ npm run dev
 3. Busca el botón **"Analizar con IA"** o **"Obtener Insights"**
 4. Haz clic y espera 1-3 segundos
 5. Deberías ver:
-   ```
-   ✅ Respuesta exitosa de Gemini
-   
-   📊 Score de salud financiera: 78/100
-   
-   🔍 Patrones detectados:
-   - Gastas más en fines de semana
-   - Tus gastos de comida aumentaron 23%
-   - Tienes gastos recurrentes no categorizados
-   
-   💡 Recomendaciones:
-   - Reduce gastos de entretenimiento en $50/mes
-   - Categoriza tus gastos recurrentes
-   - Considera crear un fondo de emergencia
-   ```
+
+```
+✅ Respuesta exitosa de Gemini
+
+📊 Score de salud financiera: 78/100
+
+🔍 Patrones detectados:
+- Gastas más en fines de semana
+- Tus gastos de comida aumentaron 23%
+- Tienes gastos recurrentes no categorizados
+
+💡 Recomendaciones:
+- Reduce gastos de entretenimiento en $50/mes
+- Categoriza tus gastos recurrentes
+- Considera crear un fondo de emergencia
+```
 
 ---
 
@@ -240,7 +240,7 @@ Cuando tus finanzas mejoren, puedes agregar **Anthropic Claude**:
 1. Ve a [console.anthropic.com](https://console.anthropic.com)
 2. Crea cuenta ($5 de crédito inicial)
 3. Agrega al `.env`:
-   ```bash
+   ```env
    VITE_ANTHROPIC_API_KEY=sk-ant-api03-...
    ```
 

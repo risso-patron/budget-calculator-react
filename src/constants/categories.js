@@ -27,6 +27,8 @@ export const FILTER_OPTIONS = {
 export const STORAGE_KEYS = {
   INCOMES: 'budget_calculator_incomes',
   EXPENSES: 'budget_calculator_expenses',
+  CREDIT_CARDS: 'budget_calculator_credit_cards',
+  GOALS: 'budget_calculator_goals',
 };
 
 // Mensajes de la aplicación

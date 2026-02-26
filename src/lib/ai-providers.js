@@ -22,8 +22,8 @@ const PROVIDERS = {
   GEMINI: {
     name: 'Google Gemini',
     apiKey: import.meta.env.VITE_GOOGLE_GEMINI_API_KEY,
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-    model: 'gemini-1.5-flash',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent',
+    model: 'gemini-2.0-flash-lite',
     maxTokens: 2000,
     free: true,
     limits: '1500 requests/día',
@@ -261,12 +261,8 @@ const callOllama = async (prompt, maxTokens = 2000) => {
     
     if (!data.response) throw new Error('Respuesta vacía de Ollama');
 
-    return {
-      content: data.response,
-      provider: 'ollama',
-      model: PROVIDERS.OLLAMA.model,
-    };
-  } catch (error) {
+    return { content: data.response, provider: 'ollama', model: PROVIDERS.OLLAMA.model };
+  } catch {
     throw new Error('Ollama no disponible. ¿Está corriendo? (ollama serve)');
   }
 };
@@ -449,7 +445,7 @@ Responde en JSON:
   try {
     const jsonMatch = result.content.match(/\{[\s\S]*\}/);
     return JSON.parse(jsonMatch[0]);
-  } catch (error) {
+  } catch {
     throw new Error('Error parseando predicciones');
   }
 };
@@ -483,8 +479,66 @@ Responde en JSON:
   try {
     const jsonMatch = result.content.match(/\{[\s\S]*\}/);
     return JSON.parse(jsonMatch[0]);
-  } catch (error) {
+  } catch {
     return { alertas: [] };
+  }
+};
+
+/**
+ * MAPEO INTELIGENTE DE COLUMNAS CSV BANCARIAS
+ * Envía los headers + filas de muestra a la IA y devuelve el mapa de columnas.
+ * Sin caché — cada archivo es único.
+ */
+export const mapCSVColumns = async (headers, sampleRows) => {
+  const prompt = `Eres un experto en extractos bancarios latinoamericanos. Mapea las columnas de este CSV al esquema interno.
+
+Headers detectados: ${JSON.stringify(headers)}
+Filas de muestra:
+${sampleRows.slice(0, 3).map((row, i) => `Fila ${i + 1}: ${JSON.stringify(row)}`).join('\n')}
+
+Esquema interno:
+- fecha: columna con la fecha de la transacción
+- descripcion: nombre del comercio o descripción del movimiento
+- monto: columna de importe si hay UNA sola columna numérica
+- debito: columna de débitos/cargos/retiros (si hay columnas separadas D/C)
+- credito: columna de créditos/abonos/depósitos (si hay columnas separadas D/C)
+- tipo: columna que indica explícitamente si es ingreso o gasto (omitir si no existe)
+- categoria: columna de categoría (omitir si no existe)
+
+REGLAS:
+1. Si hay columnas separadas de débito y crédito → usa "debito" y "credito", NO "monto"
+2. Si hay una sola columna de importe → usa "monto"
+3. Usa el nombre EXACTO de la columna original tal como aparece en los headers
+4. Pon null para los campos que no puedas identificar con certeza
+
+Responde SOLO JSON sin explicaciones:
+{
+  "fecha": "...",
+  "descripcion": "...",
+  "monto": null,
+  "debito": "...",
+  "credito": "...",
+  "tipo": null,
+  "categoria": null
+}`;
+
+  const result = await callAI(prompt, 600, false);
+
+  try {
+    const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Sin JSON en respuesta');
+
+    const raw = JSON.parse(jsonMatch[0]);
+    // Limpiar nulls y strings "null"
+    const cleaned = {};
+    for (const [key, val] of Object.entries(raw)) {
+      if (val && val !== 'null' && val !== 'None' && val !== '') {
+        cleaned[key] = val;
+      }
+    }
+    return { columnMap: cleaned, provider: result.provider };
+  } catch {
+    throw new Error('La IA no pudo determinar el mapeo de columnas');
   }
 };
 

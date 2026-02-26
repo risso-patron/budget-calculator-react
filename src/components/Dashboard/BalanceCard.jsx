@@ -1,18 +1,19 @@
 import PropTypes from 'prop-types';
 import { Card } from '../Shared/Card';
 import { formatCurrency } from '../../utils/formatters';
+import { addAmounts, subtractAmounts, calculatePercentage } from '../../utils/currencyHelpers';
 import { MoneyRainWebP, HomerMoneyWebP, WebPWithGlow } from '../Shared/WebPAnimation';
 
 /**
  * Componente BalanceCard - Muestra el balance con indicador visual
  */
 export const BalanceCard = ({ totalIncome, totalExpenses, balance, creditCardDebt = 0 }) => {
-  // Calcular gastos totales incluyendo deudas de tarjetas
-  const totalExpensesWithDebt = totalExpenses + creditCardDebt;
-  const realBalance = totalIncome - totalExpensesWithDebt;
-  
-  // Calcular porcentaje para la barra de progreso
-  const percentage = totalIncome > 0 ? Math.max(0, (realBalance / totalIncome) * 100) : 0;
+  // Usar decimal.js para evitar errores de punto flotante en sumas/restas
+  const totalExpensesWithDebt = addAmounts(totalExpenses, creditCardDebt);
+  const realBalance = subtractAmounts(balance, creditCardDebt);
+
+  // Porcentaje con precisión decimal
+  const percentage = calculatePercentage(Math.max(0, realBalance), totalIncome);
   const isPositive = realBalance >= 0;
 
   return (
