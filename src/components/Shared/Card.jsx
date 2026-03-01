@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
  */
 export const Card = ({ children, className = '', title, icon }) => {
   return (
-    <div className={`bg-white rounded-2xl p-6 shadow-card hover:shadow-card-hover transition-shadow duration-300 ${className}`}>
+    <div className={`bg-white rounded-2xl p-4 sm:p-6 shadow-card hover:shadow-card-hover transition-shadow duration-300 ${className}`}>
       {(title || icon) && (
         <div className="flex items-center gap-3 mb-5">
           {icon && <span className="text-3xl">{icon}</span>}
