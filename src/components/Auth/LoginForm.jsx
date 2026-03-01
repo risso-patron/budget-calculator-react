@@ -43,13 +43,13 @@ export const LoginForm = ({ onToggleForm }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-purple-800 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-purple-800 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-8">
+        <div className="text-center mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
             Calculadora de Presupuesto
           </h1>
-          <p className="text-gray-600">Inicia sesión para continuar</p>
+          <p className="text-sm text-gray-500">Inicia sesión para continuar</p>
         </div>
 
         {error && (
@@ -60,7 +60,7 @@ export const LoginForm = ({ onToggleForm }) => {
         <button
           type="button"
           onClick={signInWithGoogle}
-          className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-3 px-4 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2 px-3 text-sm text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <svg width="20" height="20" viewBox="0 0 48 48">
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -72,13 +72,13 @@ export const LoginForm = ({ onToggleForm }) => {
         </button>
 
         {/* Separador */}
-        <div className="relative flex items-center">
+        <div className="relative flex items-center my-3">
           <div className="flex-grow border-t border-gray-200"></div>
-          <span className="mx-4 text-sm text-gray-400">o continúa con email</span>
+          <span className="mx-3 text-xs text-gray-400">o continúa con email</span>
           <div className="flex-grow border-t border-gray-200"></div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label
               htmlFor="email"
@@ -92,7 +92,7 @@ export const LoginForm = ({ onToggleForm }) => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-sm"
               placeholder="tu@email.com"
               required
             />
@@ -112,7 +112,7 @@ export const LoginForm = ({ onToggleForm }) => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-sm"
                 placeholder="••••••••"
                 required
                 minLength="6"
@@ -166,26 +166,26 @@ export const LoginForm = ({ onToggleForm }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:from-purple-700 hover:to-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-3 text-center">
           <button
             onClick={() => onToggleForm('forgot-password')}
-            className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+            className="text-purple-600 hover:text-purple-700 text-xs font-medium"
           >
             ¿Olvidaste tu contraseña?
           </button>
         </div>
 
-        <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-          <p className="text-gray-600 text-sm mb-3">¿No tienes una cuenta?</p>
+        <div className="mt-3 pt-3 border-t border-gray-200 text-center">
+          <p className="text-gray-500 text-xs mb-2">¿No tienes una cuenta?</p>
           <button
             onClick={() => onToggleForm('register')}
-            className="text-purple-600 hover:text-purple-700 font-semibold"
+            className="text-purple-600 hover:text-purple-700 text-sm font-semibold"
           >
             Crear cuenta
           </button>

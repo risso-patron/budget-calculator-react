@@ -340,7 +340,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen p-5 md:p-8">
+    <div className="min-h-screen p-3 sm:p-5 md:p-8">
       {/* Diálogo de migración */}
       {showMigration && (
         <MigrationDialog
@@ -382,74 +382,77 @@ function AppContent() {
       {/* Container principal */}
       <div className="max-w-7xl mx-auto">
         {/* Header con Profile Menu */}
-        <header className="bg-gradient-dark dark:bg-gray-800 text-white rounded-2xl px-6 pt-6 pb-4 mb-8 shadow-xl">
-          <div className="flex justify-between items-start gap-4">
-            {/* Título + tabs */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-3xl md:text-4xl font-light mb-1 truncate">
-                Calculadora de Presupuesto Personal
+        <header className="bg-gradient-dark dark:bg-gray-800 text-white rounded-2xl px-4 sm:px-6 pt-5 pb-4 mb-6 sm:mb-8 shadow-xl">
+
+          {/* Fila 1: Título + controles */}
+          <div className="flex justify-between items-start gap-3 mb-4">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl md:text-4xl font-light leading-tight">
+                <span className="hidden sm:inline">Calculadora de Presupuesto Personal</span>
+                <span className="sm:hidden">Presupuesto Personal</span>
               </h1>
-              <p className="text-sm opacity-70 mb-4">
+              <p className="hidden sm:block text-sm opacity-70 mt-0.5">
                 Gestiona tus finanzas personales de manera inteligente con IA
               </p>
-              {/* Tabs de navegación */}
-              <div className="flex gap-1 bg-white/10 rounded-xl p-1 w-fit">
-                {[
-                  { id: 'resumen',      label: 'Resumen',      Icon: ChartBar },
-                  { id: 'graficos',     label: 'Gráficos',     Icon: ChartLine },
-                  { id: 'herramientas', label: 'Herramientas', Icon: Wrench },
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      activeTab === tab.id
-                        ? 'bg-white text-indigo-700 shadow-md'
-                        : 'text-white/75 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <tab.Icon size={15} weight={activeTab === tab.id ? 'fill' : 'regular'} />
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <ThemeToggle />
+              <ProfileMenu />
+            </div>
+          </div>
+
+          {/* Fila 2: Tabs + selector de año */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tabs de navegación */}
+            <div className="flex gap-1 bg-white/10 rounded-xl p-1">
+              {[
+                { id: 'resumen',      label: 'Resumen',      Icon: ChartBar },
+                { id: 'graficos',     label: 'Gráficos',     Icon: ChartLine },
+                { id: 'herramientas', label: 'Herramientas', Icon: Wrench },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-white text-indigo-700 shadow-md'
+                      : 'text-white/75 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <tab.Icon size={14} weight={activeTab === tab.id ? 'fill' : 'regular'} />
+                  <span className="hidden xs:inline">{tab.label}</span>
+                </button>
+              ))}
             </div>
 
-            {/* Controles derechos */}
-            <div className="flex flex-col items-end gap-3 shrink-0">
-              <div className="flex items-center gap-3">
-                <ThemeToggle />
-                <ProfileMenu />
-              </div>
-              {/* Selector de año */}
-              {availableYears.length > 0 && (
-                <div className="flex gap-1 bg-white/10 rounded-xl p-1">
+            {/* Selector de año */}
+            {availableYears.length > 0 && (
+              <div className="flex gap-1 bg-white/10 rounded-xl p-1">
+                <button
+                  onClick={() => setSelectedYear(null)}
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedYear === null
+                      ? 'bg-white text-indigo-700 shadow'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  Todo
+                </button>
+                {availableYears.map(year => (
                   <button
-                    onClick={() => setSelectedYear(null)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      selectedYear === null
+                    key={year}
+                    onClick={() => setSelectedYear(year)}
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      selectedYear === year
                         ? 'bg-white text-indigo-700 shadow'
                         : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    Todo
+                    {year}
                   </button>
-                  {availableYears.map(year => (
-                    <button
-                      key={year}
-                      onClick={() => setSelectedYear(year)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                        selectedYear === year
-                          ? 'bg-white text-indigo-700 shadow'
-                          : 'text-white/70 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      {year}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </header>
 

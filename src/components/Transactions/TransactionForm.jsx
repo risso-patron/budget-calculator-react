@@ -25,7 +25,7 @@ const CurrencyInput = ({
   
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label htmlFor={id} className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
         {label} {required && <span className="text-red-500" aria-label="requerido">*</span>}
       </label>
       <NumericFormat
@@ -40,10 +40,10 @@ const CurrencyInput = ({
         fixedDecimalScale={false}
         allowNegative={false}
         placeholder="$0.00"
-        className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+        className={`w-full px-3 py-2 text-sm border rounded-lg outline-none transition-all
           ${error 
-            ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
-            : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+            ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900' 
+            : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900'
           }
           dark:bg-gray-700 dark:text-white
         `}
@@ -281,16 +281,16 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Formulario de Ingresos */}
       <Card>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-2 mb-3">
           <CoinsWebP size="sm" />
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white">Ingresos</h3>
+          <h3 className="text-base font-bold text-gray-800 dark:text-white">Ingresos</h3>
         </div>
-        <form onSubmit={handleIncomeSubmit} className="space-y-4" noValidate>
+        <form onSubmit={handleIncomeSubmit} className="space-y-3" noValidate>
           <div>
-            <label htmlFor={incomeDescId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor={incomeDescId} className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               Descripción <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <input
@@ -300,10 +300,10 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
               onChange={handleIncomeDescriptionChange}
               onBlur={() => handleIncomeBlur('description')}
               placeholder="Ej: Salario, Freelance"
-              className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+              className={`w-full px-3 py-2 text-sm border rounded-lg outline-none transition-all
                 ${incomeErrors.description 
-                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
-                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+                  ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900' 
+                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900'
                 }
                 dark:bg-gray-700 dark:text-white
               `}
@@ -331,7 +331,7 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
           />
 
           <div>
-            <label htmlFor={incomeDateId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor={incomeDateId} className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               Fecha <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <input
@@ -341,10 +341,10 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
               onChange={handleIncomeDateChange}
               onBlur={() => handleIncomeBlur('date')}
               max={new Date().toISOString().split('T')[0]}
-              className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+              className={`w-full px-3 py-2 text-sm border rounded-lg outline-none transition-all
                 ${incomeErrors.date 
-                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
-                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+                  ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900' 
+                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900'
                 }
                 dark:bg-gray-700 dark:text-white dark:color-scheme-dark
               `}
@@ -383,13 +383,13 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
 
       {/* Formulario de Gastos */}
       <Card>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-2 mb-3">
           <DonutWebP size="sm" />
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white">Gastos</h3>
+          <h3 className="text-base font-bold text-gray-800 dark:text-white">Gastos</h3>
         </div>
-        <form onSubmit={handleExpenseSubmit} className="space-y-4" noValidate>
+        <form onSubmit={handleExpenseSubmit} className="space-y-3" noValidate>
           <div>
-            <label htmlFor={expenseDescId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor={expenseDescId} className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               Descripción <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <input
@@ -399,10 +399,10 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
               onChange={handleExpenseDescriptionChange}
               onBlur={() => handleExpenseBlur('description')}
               placeholder="Ej: Renta, Comida"
-              className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+              className={`w-full px-3 py-2 text-sm border rounded-lg outline-none transition-all
                 ${expenseErrors.description 
-                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
-                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+                  ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900' 
+                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900'
                 }
                 dark:bg-gray-700 dark:text-white
               `}
@@ -420,14 +420,14 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
           </div>
 
           <div>
-            <label htmlFor={expenseCatId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor={expenseCatId} className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               Categoría <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <select
               id={expenseCatId}
               value={expenseCategory}
               onChange={(e) => setExpenseCategory(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900 outline-none transition-all dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900 outline-none transition-all dark:bg-gray-700 dark:text-white"
               aria-required="true"
             >
               {EXPENSE_CATEGORIES.map((cat) => (
@@ -449,7 +449,7 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
           />
 
           <div>
-            <label htmlFor={expenseDateId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor={expenseDateId} className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               Fecha <span className="text-red-500" aria-label="requerido">*</span>
             </label>
             <input
@@ -459,10 +459,10 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
               onChange={handleExpenseDateChange}
               onBlur={() => handleExpenseBlur('date')}
               max={new Date().toISOString().split('T')[0]}
-              className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-all
+              className={`w-full px-3 py-2 text-sm border rounded-lg outline-none transition-all
                 ${expenseErrors.date 
-                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900' 
-                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900'
+                  ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900' 
+                  : 'border-gray-200 dark:border-gray-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900'
                 }
                 dark:bg-gray-700 dark:text-white dark:color-scheme-dark
               `}

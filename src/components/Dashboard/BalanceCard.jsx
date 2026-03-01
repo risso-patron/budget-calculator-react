@@ -71,18 +71,18 @@ export const BalanceCard = ({ totalIncome, totalExpenses, balance, creditCardDeb
         <h2 className="text-xl font-medium opacity-90">Resumen Financiero</h2>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {/* Total Ingresos */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-5 transform transition-transform hover:scale-105">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 transform transition-transform hover:scale-105">
           <div className="text-sm opacity-80 mb-1">Total Ingresos</div>
-          <div className="text-3xl font-bold">{formatCurrency(totalIncome)}</div>
+          <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(totalIncome)}</div>
           <MiniSparkline values={ingresosSpark} color="#4ade80" />
         </div>
 
         {/* Total Gastos */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-5 transform transition-transform hover:scale-105">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 transform transition-transform hover:scale-105">
           <div className="text-sm opacity-80 mb-1">Total Gastos</div>
-          <div className="text-3xl font-bold">{formatCurrency(totalExpensesWithDebt)}</div>
+          <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(totalExpensesWithDebt)}</div>
           {creditCardDebt > 0 && (
             <div className="text-xs opacity-70 mt-1">
               Gastos: {formatCurrency(totalExpenses)} + Tarjetas: {formatCurrency(creditCardDebt)}
@@ -92,9 +92,9 @@ export const BalanceCard = ({ totalIncome, totalExpenses, balance, creditCardDeb
         </div>
 
         {/* Balance */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-5 transform transition-transform hover:scale-105">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 transform transition-transform hover:scale-105">
           <div className="text-sm opacity-80 mb-1">Balance</div>
-          <div className={`text-3xl font-bold ${isPositive ? 'text-accent-green' : 'text-accent-red'}`}>
+          <div className={`text-2xl sm:text-3xl font-bold ${isPositive ? 'text-accent-green' : 'text-accent-red'}`}>
             {formatCurrency(realBalance)}
           </div>
           <MiniSparkline values={balanceSpark} color={isPositive ? '#4ade80' : '#f87171'} />
