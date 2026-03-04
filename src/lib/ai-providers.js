@@ -271,6 +271,41 @@ const callOllama = async (prompt, maxTokens = 2000) => {
  * Llamada inteligente con fallback automático
  * Intenta proveedores en orden hasta que uno responda
  */
+/**
+ * Llama al proxy seguro de Netlify Functions
+ * En producción, las API keys viven solo en el servidor
+ */
+const callViaProxy = async (prompt) => {
+  const response = await fetch('/.netlify/functions/ai-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, provider: 'auto' }),
+  });
+
+  if (response.status === 429) {
+    throw new Error('Rate limit alcanzado. Espera 1 minuto.');
+  }
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Proxy error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return {
+    content: data.result,
+    provider: data.provider,
+    model: 'proxy',
+  };
+};
+
+/**
+ * Determina si estamos en producción (Netlify)
+ */
+const isProduction = () => {
+  return window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1';
+};
+
 export const callAI = async (prompt, maxTokens = 2000, useCache = true) => {
   // Verificar caché
   const cacheKey = useCache ? `${prompt.substring(0, 100)}_${maxTokens}` : null;
@@ -283,7 +318,21 @@ export const callAI = async (prompt, maxTokens = 2000, useCache = true) => {
     }
   }
 
-  // Orden de prioridad (gratis primero)
+  // En producción: usar proxy seguro (API keys solo en el servidor)
+  if (isProduction()) {
+    try {
+      const result = await callViaProxy(prompt);
+      if (useCache && cacheKey) {
+        responseCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      }
+      return result;
+    } catch (error) {
+      console.warn('⚠️ Proxy falló:', error.message);
+      throw error; // En producción no fallback a keys del cliente
+    }
+  }
+
+  // En desarrollo: intentar APIs directamente (con VITE_ keys del .env local)
   const providers = [
     { name: 'Gemini', fn: callGemini, enabled: !!PROVIDERS.GEMINI.apiKey },
     { name: 'Groq', fn: callGroq, enabled: !!PROVIDERS.GROQ.apiKey },

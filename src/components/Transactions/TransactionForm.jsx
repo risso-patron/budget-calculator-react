@@ -7,6 +7,7 @@ import { Card } from '../Shared/Card';
 import { Button } from '../Shared/Button';
 import { EXPENSE_CATEGORIES } from '../../constants/categories';
 import { validateDescription, validateAmount, validateDate } from '../../utils/validators';
+import { sanitizeText, sanitizeDate, sanitizeCategory } from '../../utils/sanitize';
 import { CoinsWebP, DonutWebP } from '../Shared/WebPAnimation';
 
 /**
@@ -234,7 +235,11 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
       return;
     }
     
-    const success = onAddIncome(incomeDescription, incomeAmount, incomeDate);
+    const success = onAddIncome(
+      sanitizeText(incomeDescription),
+      incomeAmount,
+      sanitizeDate(incomeDate) || incomeDate
+    );
     if (success) {
       setIncomeDescription('');
       setIncomeAmount('');
@@ -267,7 +272,12 @@ export const TransactionForm = ({ onAddIncome, onAddExpense }) => {
       return;
     }
     
-    const success = onAddExpense(expenseDescription, expenseCategory, expenseAmount, expenseDate);
+    const success = onAddExpense(
+      sanitizeText(expenseDescription),
+      sanitizeCategory(expenseCategory),
+      expenseAmount,
+      sanitizeDate(expenseDate) || expenseDate
+    );
     if (success) {
       setExpenseDescription('');
       setExpenseAmount('');
