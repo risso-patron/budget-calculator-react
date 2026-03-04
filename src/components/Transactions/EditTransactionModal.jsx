@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { NumericFormat } from 'react-number-format';
 import { EXPENSE_CATEGORIES } from '../../constants/categories';
 import { validateDescription, validateAmount, validateDate } from '../../utils/validators';
+import { sanitizeText, sanitizeDate, sanitizeCategory } from '../../utils/sanitize';
 import { Button } from '../Shared/Button';
 
 /**
@@ -92,10 +93,10 @@ export const EditTransactionModal = ({
     }
     
     const updates = {
-      description,
+      description: sanitizeText(description),
       amount,
-      date,
-      ...(type === 'expense' && { category }),
+      date: sanitizeDate(date) || date,
+      ...(type === 'expense' && { category: sanitizeCategory(category) }),
     };
     
     onSave(transaction.id, updates);
