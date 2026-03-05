@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Privacidad – Budget Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.7; }
+    .container { max-width: 800px; margin: 0 auto; padding: 48px 24px; }
+    header { text-align: center; margin-bottom: 48px; }
+    header a { color: #818cf8; text-decoration: none; font-size: 14px; }
+    header a:hover { text-decoration: underline; }
+    h1 { font-size: 2rem; font-weight: 700; color: #f1f5f9; margin: 16px 0 8px; }
+    .subtitle { color: #94a3b8; font-size: 14px; }
+    h2 { font-size: 1.2rem; font-weight: 600; color: #c7d2fe; margin: 36px 0 12px; border-left: 3px solid #6366f1; padding-left: 12px; }
+    p { color: #cbd5e1; margin-bottom: 12px; }
+    ul { color: #cbd5e1; padding-left: 24px; margin-bottom: 12px; }
+    ul li { margin-bottom: 6px; }
+    a { color: #818cf8; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 8px; }
+    footer { text-align: center; margin-top: 64px; padding-top: 24px; border-top: 1px solid #1e293b; color: #64748b; font-size: 13px; }
+    footer a { color: #818cf8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="https://budget-calculator-rp.netlify.app">← Volver a la app</a>
+      <h1>Política de Privacidad</h1>
+      <p class="subtitle">Última actualización: 4 de marzo de 2026</p>
+    </header>
+
+    <div class="card">
+      <h2>1. Quién somos</h2>
+      <p>Budget Calculator es una aplicación web de gestión de finanzas personales desarrollada por <strong>Jorge Luis Risso Patrón</strong>, con domicilio en Panamá. Puedes contactarnos en <a href="mailto:luisrissopa@gmail.com">luisrissopa@gmail.com</a>.</p>
+    </div>
+
+    <div class="card">
+      <h2>2. Datos que recopilamos</h2>
+      <p>Recopilamos únicamente los datos necesarios para que la aplicación funcione:</p>
+      <ul>
+        <li><strong>Datos de cuenta:</strong> nombre completo y dirección de correo electrónico, al registrarte por email o con Google.</li>
+        <li><strong>Datos financieros:</strong> transacciones (descripción, monto, categoría, fecha) que tú ingresas voluntariamente.</li>
+        <li><strong>Datos de uso:</strong> metas de ahorro, tarjetas de crédito y preferencias que configures en la app.</li>
+        <li><strong>Datos técnicos:</strong> cookies de sesión necesarias para mantenerte autenticado.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>3. Cómo usamos tus datos</h2>
+      <ul>
+        <li>Para autenticarte y mostrarte tus datos financieros personales.</li>
+        <li>Para generar análisis financieros mediante Inteligencia Artificial (Gemini, Groq). Los datos enviados a estas APIs se usan únicamente para generar la respuesta y no son almacenados por nosotros.</li>
+        <li>Para mostrarte estadísticas, gráficos y reportes dentro de la app.</li>
+        <li><strong>No vendemos ni compartimos tus datos con terceros</strong> con fines comerciales o publicitarios.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>4. Proveedores de terceros</h2>
+      <ul>
+        <li><strong>Supabase</strong> (supabase.com) – Almacenamiento de base de datos y autenticación. Datos alojados en servidores con cifrado en reposo y en tránsito.</li>
+        <li><strong>Netlify</strong> (netlify.com) – Hosting de la aplicación web.</li>
+        <li><strong>Google</strong> (google.com) – Autenticación OAuth opcional.</li>
+        <li><strong>Google Gemini / Groq / Anthropic</strong> – APIs de IA para análisis financiero. Solo se envían datos de tus transacciones cuando usas activamente la función de IA.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>5. Almacenamiento y seguridad</h2>
+      <p>Tus datos se almacenan en Supabase con las siguientes medidas de seguridad:</p>
+      <ul>
+        <li>Cifrado TLS en tránsito (HTTPS)</li>
+        <li>Row Level Security (RLS): cada usuario solo puede acceder a sus propios datos</li>
+        <li>Contraseñas hasheadas (nunca almacenadas en texto plano)</li>
+        <li>Las API keys de IA nunca se exponen al navegador (pasan por un proxy seguro)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>6. Tus derechos</h2>
+      <p>Tienes derecho a:</p>
+      <ul>
+        <li><strong>Acceder</strong> a todos tus datos personales almacenados.</li>
+        <li><strong>Rectificar</strong> datos incorrectos.</li>
+        <li><strong>Eliminar</strong> tu cuenta y todos tus datos enviando un email a <a href="mailto:luisrissopa@gmail.com">luisrissopa@gmail.com</a>.</li>
+        <li><strong>Exportar</strong> tus transacciones en formato CSV desde la app.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>7. Cookies</h2>
+      <p>Usamos cookies de sesión estrictamente necesarias para mantener tu autenticación activa. No usamos cookies de rastreo ni publicidad. Puedes eliminar las cookies desde la configuración de tu navegador, lo que cerrará tu sesión.</p>
+    </div>
+
+    <div class="card">
+      <h2>8. Menores de edad</h2>
+      <p>Budget Calculator no está dirigido a menores de 13 años. No recopilamos datos de menores de manera intencional.</p>
+    </div>
+
+    <div class="card">
+      <h2>9. Cambios a esta política</h2>
+      <p>Podemos actualizar esta política ocasionalmente. Te notificaremos sobre cambios significativos por email. La fecha de última actualización siempre estará visible en la parte superior de esta página.</p>
+    </div>
+
+    <div class="card">
+      <h2>10. Contacto</h2>
+      <p>Para cualquier consulta sobre privacidad: <a href="mailto:luisrissopa@gmail.com">luisrissopa@gmail.com</a></p>
+    </div>
+
+    <footer>
+      <p>© 2026 Budget Calculator · <a href="/privacy.html">Privacidad</a> · <a href="/terms.html">Términos</a> · <a href="https://budget-calculator-rp.netlify.app">Volver a la app</a></p>
+    </footer>
+  </div>
+</body>
+</html>

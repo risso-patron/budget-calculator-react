@@ -613,6 +613,11 @@ function AppContent() {
               R P
             </a>
           </p>
+          <p className="mt-2 text-xs text-white/50">
+            <a href="/privacy.html" className="hover:text-white/80 transition-colors">Política de Privacidad</a>
+            {' · '}
+            <a href="/terms.html" className="hover:text-white/80 transition-colors">Términos de Servicio</a>
+          </p>
         </footer>
       </div>
     </div>

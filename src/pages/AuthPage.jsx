@@ -94,6 +94,11 @@ export default function AuthPage() {
               R P
             </a>
           </p>
+          <p className="mt-2 text-xs text-gray-500">
+            <a href="/privacy.html" className="hover:text-gray-300 transition-colors">Política de Privacidad</a>
+            {' · '}
+            <a href="/terms.html" className="hover:text-gray-300 transition-colors">Términos de Servicio</a>
+          </p>
         </div>
       </div>
     </div>
