@@ -34,8 +34,9 @@ import { ExportManager } from './features/export/ExportManager';
 import ImportManager from './features/import/ImportManager';
 // GAMIFICACIÓN
 import { GamificationDashboard, AchievementNotifications } from './features/gamification';
-import { useAchievements } from './hooks/gamification/useAchievements';
-
+import { useAchievements } from './hooks/gamification/useAchievements';// NUEVAS FEATURES: Presupuestos + Chat IA
+import { BudgetManager } from './features/budgets/BudgetManager'
+import { AIChat } from './features/chat/AIChat'
 
 /**
  * Componente principal de la aplicación con autenticación
@@ -471,6 +472,14 @@ function AppContent() {
 
             <AIProviderStatus />
 
+            {/* Chat IA conversacional */}
+            <AIChat
+              transactions={allTransactions}
+              totalIncome={filteredTotalIncome}
+              totalExpenses={filteredTotalExpenses}
+              balance={filteredBalance}
+            />
+
             <AIInsightsPanel
               analysis={aiInsights.analysis}
               loading={aiInsights.analyzing}
@@ -563,6 +572,9 @@ function AppContent() {
               onUpdateDebt={handleUpdateDebt}
               onRemoveCard={handleRemoveCard}
             />
+
+            {/* Presupuestos por categoría */}
+            <BudgetManager expenses={filteredExpenses} />
 
             <GoalManager
               goals={goals}
