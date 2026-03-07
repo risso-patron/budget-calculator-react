@@ -2,9 +2,22 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  
+
+  // En producción: las API keys de IA NO deben ir al bundle del cliente.
+  // El proxy de Netlify Functions las lee desde process.env (sin prefijo VITE_).
+  // Este bloque reemplaza estáticamente esas variables con string vacío
+  // aunque estén definidas como env vars en el panel de Netlify, previniendo
+  // que el scanner de secretos falle el build.
+  ...(mode === 'production' && {
+    define: {
+      'import.meta.env.VITE_GOOGLE_GEMINI_API_KEY': JSON.stringify(''),
+      'import.meta.env.VITE_GROQ_API_KEY':          JSON.stringify(''),
+      'import.meta.env.VITE_ANTHROPIC_API_KEY':     JSON.stringify(''),
+    },
+  }),
+
   // Optimizaciones de build
   build: {
     minify: 'esbuild',
@@ -97,4 +110,4 @@ export default defineConfig({
   ssr: {
     noExternal: ['es-toolkit'],
   },
-})
+}))
