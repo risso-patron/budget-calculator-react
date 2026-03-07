@@ -12,10 +12,11 @@ const RECURRING_KEY = 'budget_calculator_recurring';
 function getNextDue(frequency, fromDate) {
   const date = new Date(fromDate + 'T12:00:00');
   switch (frequency) {
-    case 'daily':   date.setDate(date.getDate() + 1); break;
-    case 'weekly':  date.setDate(date.getDate() + 7); break;
-    case 'monthly': date.setMonth(date.getMonth() + 1); break;
-    case 'yearly':  date.setFullYear(date.getFullYear() + 1); break;
+    case 'daily':      date.setDate(date.getDate() + 1);         break;
+    case 'weekly':     date.setDate(date.getDate() + 7);         break;
+    case 'biweekly':   date.setDate(date.getDate() + 15);        break;
+    case 'monthly':    date.setMonth(date.getMonth() + 1);       break;
+    case 'yearly':     date.setFullYear(date.getFullYear() + 1); break;
     default: break;
   }
   return date.toISOString().split('T')[0];
