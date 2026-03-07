@@ -9,13 +9,14 @@ import { sanitizeText, sanitizeCategory } from '../../utils/sanitize';
 import { NumericFormat } from 'react-number-format';
 
 const FREQUENCIES = [
-  { value: 'daily',   label: 'Diario'   },
-  { value: 'weekly',  label: 'Semanal'  },
-  { value: 'monthly', label: 'Mensual'  },
-  { value: 'yearly',  label: 'Anual'    },
+  { value: 'daily',       label: 'Diario'     },
+  { value: 'weekly',      label: 'Semanal'    },
+  { value: 'biweekly',   label: 'Quincenal'  },
+  { value: 'monthly',    label: 'Mensual'    },
+  { value: 'yearly',     label: 'Anual'      },
 ];
 
-const FREQ_LABELS = { daily: 'Cada día', weekly: 'Semanal', monthly: 'Mensual', yearly: 'Anual' };
+const FREQ_LABELS = { daily: 'Cada día', weekly: 'Semanal', biweekly: 'Quincenal', monthly: 'Mensual', yearly: 'Anual' };
 
 /**
  * Formatea 'YYYY-MM-DD' a string legible en español
