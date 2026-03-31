@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { flushSync } from 'react-dom';
-import Lottie from 'lottie-react';
-import loadingAnimation from '../../assets/loading-csv.json';
-import { useAIInsights } from '../../hooks/useAIInsightsMulti';
+import { parseRawText, parseCSVLineFlexible } from '../../core/parserEngine';
+import { findHeaderIndex, normalizeHeader } from '../../core/headerDetector';
+import { findColumnIndices } from '../../core/mappingEngine';
+import { normalizeAmount, normalizeDate, cleanText } from '../../core/normalizationEngine';
+import { categorizeTransactionsFull } from '../../core/categorizationEngine';
+import TransactionPreviewTable from './TransactionPreviewTable';
 
 // ─── Clave de localStorage para perfiles de bancos ───────────────────────────
 const PROFILES_KEY = 'budget_import_bank_profiles';
@@ -52,24 +53,6 @@ const COLUMN_ALIASES = {
     'categoria', 'category', 'rubro', 'clasificacion', 'subcategoria',
   ],
 };
-
-/** Detecta el separador más probable (coma, punto y coma o tabulador) */
-const detectSeparator = (text) => {
-  const firstLine = (text.split('\n')[0] || '').substring(0, 1000);
-  const semi  = (firstLine.match(/;/g)  || []).length;
-  const comma = (firstLine.match(/,/g)  || []).length;
-  const tab   = (firstLine.match(/\t/g) || []).length;
-  if (semi  > comma && semi  > tab) return ';';
-  if (tab   > comma)               return '\t';
-  return ',';
-};
-
-/** Normaliza un header: minúsculas, sin tildes, sin chars especiales */
-const normalizeHeader = (h) =>
-  h.toLowerCase()
-   .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-   .replace(/[^\w\s]/g, '')
-   .trim();
 
 /**
  * Intenta mapear headers al esquema interno via el diccionario.
@@ -141,54 +124,94 @@ export default function ImportManager({ onImport, onBulkImport }) {
   const [showColumnMapper, setShowColumnMapper] = useState(false);
   const [manualMap, setManualMap] = useState({});
   const [saveProfileName, setSaveProfileName] = useState('');
-  const [mappingMode, setMappingMode] = useState(null); // 'template'|'profile'|'pattern'|'ai'|'manual'
+  const [mappingMode, setMappingMode] = useState(null); // 'template'|'profile'|'pattern'|'ai'|'manual'|'modular'
   const [loadingFile, setLoadingFile] = useState(false);
   
-  // Hook de IA para auto-categorización
+  // Hook de IA para auto-categorización (manteniendo por si se necesita externamente)
   const aiInsights = useAIInsights([]);
 
-  // ─── Flujo A→C→B: Patrones → IA → Manual ─────────────────────────────────────
+  const handleUpdateTransaction = (index, field, value) => {
+    setPreviewData(prev => {
+      const newData = [...prev];
+      newData[index] = { ...newData[index], [field]: value };
+      return newData;
+    });
+  };
+
+  /** 
+   * FUNCIÓN CENTRAL (Fase 5): Orquesta el flujo completo de datos con IA Fallback.
+   * Cadena: Parser → Header → Mapping → Normalization → Categorization (Híbrida).
+   */
+  const handleFile = async (rawText) => {
+    // 1. Parser Engine (Fase 1)
+    const { rows, separator } = parseRawText(rawText);
+    
+    // 2. Header Detector (Fase 1)
+    const allAliases = Object.values(COLUMN_ALIASES).flat();
+    const headerIdx = findHeaderIndex(rows, separator, allAliases);
+
+    // 3. Mapping Engine (Fase 2)
+    const rawHeaders = parseCSVLineFlexible(rows[headerIdx], separator);
+    const mapping = findColumnIndices(rawHeaders);
+    
+    // 4. Normalization Engine (Fase 3)
+    const normalized = [];
+    const mappingIndices = {
+      date: mapping.date,
+      amount: mapping.amount,
+      description: mapping.description
+    };
+    
+    // Procesar filas de datos (después del header)
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const values = parseCSVLineFlexible(rows[i], separator);
+      if (values.length < 2) continue;
+
+      const date = normalizeDate(values[mappingIndices.date]);
+      const amount = normalizeAmount(values[mappingIndices.amount]);
+      const description = cleanText(values[mappingIndices.description]);
+
+      if (date && description) {
+        normalized.push({ date, amount, description });
+      }
+    }
+
+    // 5. Categorization Engine Híbrido (Reglas + IA Fallback) (Fase 5)
+    // El motor usa reglas locales primero, y si no encuentra match o es "Otros",
+    // hace consultas en batch a la IA para categorizar inteligentemente.
+    const categorized = await categorizeTransactionsFull(normalized);
+
+    console.log('✅ MODULAR PIPELINE COMPLETE (Fase 5 - Híbrido):', { 
+      totalRows: rows.length, 
+      detectedSeparator: separator, 
+      transactionsProcessed: categorized.length,
+      sample: categorized.slice(0, 3)
+    });
+
+    return { rows, separator, headerIdx, mapping, normalized: categorized };
+  };
 
   /** Lógica central de detección: recibe texto crudo y determina qué camino tomar */
   const tryAutoDetect = async (text) => {
-    // 1. Limpiar BOM + normalizar saltos de línea
-    let clean = text;
-    if (clean.charCodeAt(0) === 0xFEFF) clean = clean.slice(1);
-    clean = clean.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    // Orquestar vía handleFile modular
+    const { rows: allLines, separator: sep, headerIdx, normalized } = await handleFile(text);
 
-    const sep   = detectSeparator(clean);
-    const allLines = clean.split('\n').filter(l => l.trim());
-    if (allLines.length < 2) throw new Error('El archivo debe tener al menos una fila de datos');
-
-    // --- Auto-detectar la fila real de cabeceras ---
-    // Algunos extractos bancarios tienen filas de metadatos antes de los headers
-    // (nombre del banco, número de cuenta, período, etc.).
-    // Buscamos la primera fila que: tenga ≥2 columnas Y al menos una coincida
-    // con un alias conocido. Si no encontramos match, usamos la fila 0.
-    const allAliases = Object.values(COLUMN_ALIASES).flat();
-    let headerIdx = 0;
-    for (let i = 0; i < Math.min(allLines.length - 1, 10); i++) {
-      const tokens = parseCSVLineFlexible(allLines[i], sep);
-      if (tokens.length < 2) continue;
-      const normalized = tokens.map(normalizeHeader);
-      const hasKnownAlias = normalized.some(h => allAliases.includes(h));
-      if (hasKnownAlias) { headerIdx = i; break; }
-      // Segunda heurística: fila con ≥3 tokens no numéricos → candidata a header
-      const nonNumeric = tokens.filter(t => isNaN(t.replace(/[.,]/g, '')) && t.length > 0);
-      if (nonNumeric.length >= 3 && i === 0) headerIdx = 0;
+    // 🔥 USAR LOS RESULTADOS DEL PIPELINE MODULAR DIRECTAMENTE
+    if (normalized && normalized.length > 0) {
+      setMappingMode('modular');
+      setPreviewData(normalized);
+      return;
     }
 
-    // Reconstruir lines saltando las filas de metadatos
+    // Reconstruir rows saltando las filas de metadatos (limpia la "basura" arriba del header)
     const lines = allLines.slice(headerIdx);
 
-    // Parsear primera línea como headers
-    // rawHAll: array completo con posiciones originales (incluye columnas vacías del banco)
-    // rawH: solo columnas con nombre (para pattern matching, IA y UI)
-    // Los índices del columnMap siempre se resuelven contra rawHAll para no desplazar posiciones
+    // Parsear primera línea como headers reales del banco usando el tokenizer modular
     const rawHAll = parseCSVLineFlexible(lines[0], sep);
     const rawH    = rawHAll.filter(h => h.trim() !== '');
     const normH   = rawH.map(normalizeHeader);
-    // meta guarda rawHAll para el parser pero rawH para la UI
+
+    // Meta guarda rawHAll para el parser pero rawH para la UI
     const meta  = { lines, separator: sep, rawHeaders: rawH, rawHeadersFull: rawHAll, normalizedHeaders: normH };
     setRawCSVMeta(meta);
 
@@ -717,87 +740,38 @@ export default function ImportManager({ onImport, onBulkImport }) {
 
       let dataToImport = previewData;
 
-      // ✨ AUTO-CATEGORIZACIÓN CON IA (si está activada)
-      if (autoCategorize) {
-        console.log('🤖 Auto-categorización activada, analizando transacciones...');
-        
-        // Filtrar solo gastos sin categoría o con categoría "Otros"
-        const needsCategorization = previewData.filter(row => 
-          row.tipo.toLowerCase() === 'gasto' && (!row.categoria || row.categoria === 'Otros')
-        );
-
-        if (needsCategorization.length > 0) {
-          console.log(`🔍 ${needsCategorization.length} transacciones necesitan categorización`);
-          
-          setCategorizingProgress({
-            total: needsCategorization.length,
-            current: 0,
-            status: 'Categorizando con IA...'
-          });
-
-          try {
-            // Preparar transacciones para IA
-            const transactionsForAI = needsCategorization.map(row => ({
-              description: row.descripcion,
-              amount: parseFloat(row.monto),
-              type: 'expense'
-            }));
-
-            // Llamar a IA para categorizar en lote
-            const categorized = await aiInsights.bulkCategorize(transactionsForAI);
-
-            // Actualizar previewData con categorías sugeridas
-            dataToImport = previewData.map(row => {
-              if (row.tipo.toLowerCase() === 'gasto' && (!row.categoria || row.categoria === 'Otros')) {
-                const aiResult = categorized.find(c => c.description === row.descripcion);
-                if (aiResult && aiResult.category) {
-                  console.log(`✨ "${row.descripcion}" → ${aiResult.category} (${Math.round(aiResult.aiConfidence * 100)}% confianza)`);
-                  return {
-                    ...row,
-                    categoria: aiResult.category,
-                    aiCategorized: true,
-                    aiConfidence: aiResult.aiConfidence
-                  };
-                }
-              }
-              return row;
-            });
-
-            setCategorizingProgress({
-              total: needsCategorization.length,
-              current: needsCategorization.length,
-              status: '✅ Categorización completada'
-            });
-
-            console.log('✅ Auto-categorización completada');
-          } catch (aiError) {
-            console.warn('⚠️ Error en auto-categorización, continuando sin ella:', aiError);
-            setCategorizingProgress(null);
-          }
-        } else {
-          console.log('ℹ️ Todas las transacciones ya tienen categoría');
-        }
-      }
-
       // Si existe onBulkImport, usar importación masiva (más rápido)
       if (onBulkImport) {
         // Preparar todas las transacciones en un solo array
         const transactionsToImport = dataToImport.map(row => {
-          // Convertir fecha si es DD/MM/YYYY
+          // Detectar si es el "nuevo" formato modular (Fase 5/6)
+          if (row.date !== undefined && row.amount !== undefined) {
+            return {
+              type: row.amount >= 0 ? 'income' : 'expense',
+              description: row.description,
+              amount: Math.abs(row.amount),
+              date: row.date,
+              category: row.amount < 0 ? (row.category || 'Otros') : undefined,
+              aiCategorized: row.source === 'ai',
+              aiConfidence: row.source === 'ai' ? 0.85 : 0,
+            };
+          }
+
+          // Fallback legacy local
           let date = row.fecha;
-          if (date.includes('/')) {
+          if (date && date.includes('/')) {
             const [day, month, year] = date.split('/');
             date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
           }
 
           return {
-            type: row.tipo.toLowerCase() === 'ingreso' ? 'income' : 'expense',
+            type: row.tipo?.toLowerCase() === 'ingreso' ? 'income' : 'expense',
             description: row.descripcion,
-            amount: parseFloat(row.monto),
+            amount: parseFloat(row.monto || 0),
             date,
-            category: row.tipo.toLowerCase() === 'gasto' ? (row.categoria || 'Otros') : undefined,
-            aiCategorized: row.aiCategorized || false, // Marcar si fue categorizado por IA
-            aiConfidence: row.aiConfidence || 0,
+            category: row.tipo?.toLowerCase() === 'gasto' ? (row.categoria || 'Otros') : undefined,
+            aiCategorized: false,
+            aiConfidence: 0,
           };
         });
 
@@ -812,7 +786,7 @@ export default function ImportManager({ onImport, onBulkImport }) {
           total: dataToImport.length,
           imported: result.imported || 0,
           errors: result.errors || 0,
-          aiCategorized: dataToImport.filter(r => r.aiCategorized).length,
+          aiCategorized: transactionsToImport.filter(r => r.aiCategorized).length,
         });
       } else {
         // Fallback: Importación secuencial (para compatibilidad)
@@ -833,21 +807,24 @@ export default function ImportManager({ onImport, onBulkImport }) {
               date = `${year}-${month}-${day}`;
             }
 
-            // Determinar categoría (solo para gastos)
-            const category = row.categoria || 'Otros';
+            // Determinar categoría (solo para gastos en fallback)
+            const category = row.categoria || row.category || 'Otros';
+            const mType = row.tipo ? row.tipo.toLowerCase() : (row.amount >= 0 ? 'ingreso' : 'gasto');
+            const amt = row.monto !== undefined ? parseFloat(row.monto) : Math.abs(row.amount);
+            const desc = row.descripcion || row.description;
 
             // Llamar a la función onImport del parent
-            if (row.tipo.toLowerCase() === 'ingreso') {
+            if (mType === 'ingreso') {
               await onImport('income', {
-                description: row.descripcion,
-                amount: parseFloat(row.monto),
+                description: desc,
+                amount: amt,
                 date,
               });
             } else {
               await onImport('expense', {
-                description: row.descripcion,
+                description: desc,
                 category,
-                amount: parseFloat(row.monto),
+                amount: amt,
                 date,
               });
             }
@@ -1089,8 +1066,18 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
         </div>
       )}
 
-      {/* Vista previa */}
-      {previewData && previewData.length > 0 && (
+      {/* Vista previa (Fase 6: Componente Modular) */}
+      {previewData && previewData.length > 0 && mappingMode === 'modular' && (
+        <TransactionPreviewTable 
+          transactions={previewData}
+          onUpdateTransaction={handleUpdateTransaction}
+          onImport={handleImport}
+          isImporting={importing}
+        />
+      )}
+
+      {/* Vista previa antigua (Legacy Fallback si no fue modular) */}
+      {previewData && previewData.length > 0 && mappingMode !== 'modular' && (
         <div className="mb-6 border-2 border-purple-200 dark:border-purple-800 rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 shadow-2xl">
           <div className="flex flex-wrap items-center justify-between gap-6 mb-8">
             <div>
@@ -1100,275 +1087,28 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                 </div>
-                2. Vista Previa de Movimientos
+                2. Vista Previa (Modo Compatibilidad)
               </h4>
               <p className="text-slate-500 font-medium mt-1 ml-13">
-                Revisa los totales antes de confirmar la importación
+                Tu CSV usó el mapeador manual. Importa para continuar.
               </p>
             </div>
             
-            <div className="flex flex-wrap gap-2">
-              {/* Badge: modo de detección de columnas */}
-              {mappingMode === 'template' && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
-                  📋 Plantilla estándar
-                </span>
-              )}
-              {mappingMode === 'profile' && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
-                  💾 Perfil guardado
-                </span>
-              )}
-              {mappingMode === 'pattern' && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
-                  🎯 Detectado por patrones
-                </span>
-              )}
-              {mappingMode === 'ai' && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-                  🤖 Mapeado por IA
-                </span>
-              )}
-              {mappingMode === 'manual' && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
-                  🗂️ Configuración manual
-                </span>
-              )}
+            <div className="flex gap-2">
               <span className="text-sm font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/50 px-3 py-1 rounded-full">
                 {previewData.length} transacciones
               </span>
-              
-              {/* ⚙️ BOTÓN DE AJUSTE MANUAL (OCULTO POR DEFECTO SI TODO ESTÁ BIEN) */}
-              <button
-                onClick={() => {
-                  setMappingMode('manual');
-                  setManualMap({}); // Limpiar para que el usuario elija
-                  setShowColumnMapper(true);
-                  setPreviewData(null); // Volver al paso anterior
-                }}
-                className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-1"
-                title="Si el sistema se equivocó detectando las columnas, haz clic aquí"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Ajustar Columnas
-              </button>
             </div>
           </div>
 
-          {/* 📊 RESUMEN DINÁMICO DE TOTALES */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="p-5 rounded-[1.5rem] bg-emerald-50 dark:bg-emerald-950/20 border-2 border-emerald-100 dark:border-emerald-900/30 flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-widest">Total Ingresos</p>
-                <p className="text-2xl font-black text-emerald-700 dark:text-emerald-300">
-                  ${previewData.reduce((acc, curr) => acc + (curr.tipo === 'ingreso' ? parseFloat(curr.monto) : 0), 0).toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-[1.5rem] bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-100 dark:border-rose-900/30 flex items-center gap-4">
-              <div className="w-12 h-12 bg-rose-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/20">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs font-black text-rose-800 dark:text-rose-400 uppercase tracking-widest">Total Gastos</p>
-                <p className="text-2xl font-black text-rose-700 dark:text-rose-300">
-                  ${previewData.reduce((acc, curr) => acc + (curr.tipo === 'gasto' ? parseFloat(curr.monto) : 0), 0).toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-[1.5rem] bg-indigo-50 dark:bg-indigo-950/20 border-2 border-indigo-100 dark:border-indigo-900/30 flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs font-black text-indigo-800 dark:text-indigo-400 uppercase tracking-widest">Balance Neto</p>
-                <p className="text-2xl font-black text-indigo-700 dark:text-indigo-300">
-                  ${(
-                    previewData.reduce((acc, curr) => acc + (curr.tipo === 'ingreso' ? parseFloat(curr.monto) : 0), 0) -
-                    previewData.reduce((acc, curr) => acc + (curr.tipo === 'gasto' ? parseFloat(curr.monto) : 0), 0)
-                  ).toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto rounded-[1.5rem] border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <table className="min-w-full divide-y-2 divide-slate-100 dark:divide-slate-800">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Descripción</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Monto</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Categoría</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {previewData.slice(0, 10).map((row, idx) => {
-                  const isIngreso = row.tipo.toLowerCase() === 'ingreso';
-                  return (
-                    <tr key={idx} className={`group transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isIngreso ? 'bg-emerald-50/20' : 'bg-rose-50/10'}`}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className={`flex items-center gap-3 font-black text-xs uppercase tracking-wider ${isIngreso ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isIngreso ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-500'}`}>
-                            {isIngreso ? (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                              </svg>
-                            ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                              </svg>
-                            )}
-                          </div>
-                          {row.tipo}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate max-w-[250px]">{row.descripcion}</p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-base font-black ${isIngreso ? 'text-emerald-600' : 'text-slate-900 dark:text-white'}`}>
-                          {isIngreso ? '+' : '-'}${parseFloat(row.monto).toFixed(2)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-bold text-slate-400">{row.fecha}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {row.categoria ? (
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-black uppercase tracking-tighter">
-                              {row.categoria}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-300">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {previewData.length > 10 && (
-            <p className="text-sm text-purple-600 dark:text-purple-400 mt-3 text-center font-medium">
-              ... y {previewData.length - 10} transacciones más (mostrando primeras 10)
-            </p>
-          )}
-
-          {/* ✨ OPCIÓN DE AUTO-CATEGORIZACIÓN CON IA */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={autoCategorize}
-                onChange={(e) => setAutoCategorize(e.target.checked)}
-                disabled={importing}
-                className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    🤖 Auto-categorizar con IA (Recomendado)
-                  </span>
-                  <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-semibold rounded-full">
-                    GRATIS
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Las transacciones sin categoría serán analizadas automáticamente usando IA. 
-                  Ejemplo: "Super 99" → Comida, "Uber" → Transporte, "Netflix" → Entretenimiento
-                </p>
-                {categorizingProgress && (
-                  <div className="mt-3 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 mb-2">
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span className="font-medium">{categorizingProgress.status}</span>
-                    </div>
-                    <div className="bg-blue-200 dark:bg-blue-900/50 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="bg-blue-600 dark:bg-blue-500 h-full transition-all duration-300"
-                        style={{ width: `${(categorizingProgress.current / categorizingProgress.total) * 100}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                      {categorizingProgress.current} de {categorizingProgress.total} categorizadas
-                    </p>
-                  </div>
-                )}
-              </div>
-            </label>
-          </div>
-
-          {/* Botón de importación destacado */}
-          <div className="mt-6 space-y-3">
+          <div className="mt-6">
             <button
               onClick={handleImport}
               disabled={importing}
-              className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold text-lg 
-                hover:from-purple-700 hover:to-pink-700 
-                transform hover:scale-[1.02] active:scale-[0.98]
-                transition-all duration-200
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-                shadow-lg hover:shadow-xl
-                flex items-center justify-center gap-3"
+              className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold flex justify-center items-center gap-3"
             >
-              {importing ? (
-                <>
-                  <svg className="animate-spin h-6 w-6" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Importando {previewData.length} transacciones...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <span>3. Importar {previewData.length} transacciones al Dashboard</span>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </>
-              )}
+              Importar {previewData.length} transacciones
             </button>
-            
-            {/* Información adicional */}
-            <div className="flex items-center justify-center gap-6 text-sm text-gray-600 dark:text-gray-400">
-              <div className="flex items-center gap-1">
-                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Logros se desbloquearán automáticamente</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
-                  <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
-                </svg>
-                <span>Estadísticas se actualizarán en tiempo real</span>
-              </div>
-            </div>
           </div>
         </div>
       )}

@@ -109,94 +109,23 @@ export default function AIProviderStatus() {
         </div>
       </div>
 
-      {/* Detalles expandibles */}
-      {showDetails && (
-        <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
-          <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-3">
-            📖 Cómo configurar proveedores gratuitos:
-          </h4>
-          
-          <div className="space-y-3 text-sm">
-            {/* Gemini */}
-            {!status.gemini.configured && (
-              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg">
-                <p className="font-medium text-gray-900 dark:text-white mb-1">
-                  ✨ Google Gemini (Recomendado)
-                </p>
-                <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">
-                  🎁 Gratis: 1,500 requests/día
-                </p>
-                <ol className="text-xs text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
-                  <li>Ve a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-purple-600 dark:text-purple-400 underline">Google AI Studio</a></li>
-                  <li>Haz clic en "Get API Key"</li>
-                  <li>Copia la key (empieza con AIza...)</li>
-                  <li>Agrégala al archivo .env: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">VITE_GOOGLE_GEMINI_API_KEY=...</code></li>
-                  <li>Reinicia el servidor: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">npm run dev</code></li>
-                </ol>
-              </div>
-            )}
-
-            {/* Groq */}
-            {!status.groq.configured && (
-              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg">
-                <p className="font-medium text-gray-900 dark:text-white mb-1">
-                  ⚡ Groq (Más rápida)
-                </p>
-                <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">
-                  🎁 Gratis: 30 requests/minuto
-                </p>
-                <ol className="text-xs text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
-                  <li>Ve a <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-purple-600 dark:text-purple-400 underline">Groq Console</a></li>
-                  <li>Crea cuenta (sin tarjeta)</li>
-                  <li>Crea API Key</li>
-                  <li>Agrégala al .env: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">VITE_GROQ_API_KEY=...</code></li>
-                  <li>Reinicia el servidor</li>
-                </ol>
-              </div>
-            )}
-
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-              <p className="text-xs text-purple-700 dark:text-purple-300">
-                💡 <strong>Tip:</strong> Puedes configurar múltiples proveedores. El sistema usa fallback automático si uno falla.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <a 
-                href="/docs/FREE_AI_SETUP.md" 
-                target="_blank"
-                className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-xs font-medium underline"
-              >
-                📖 Ver guía completa de configuración
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Features disponibles cuando hay IA */}
       {hasAnyProvider && (
-        <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
-          <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-2">
-            ✨ Features activadas:
-          </h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-              <span>✅</span>
-              <span>Análisis financiero inteligente</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-              <span>✅</span>
-              <span>Categorización automática</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-              <span>✅</span>
-              <span>Predicción de gastos</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-              <span>✅</span>
-              <span>Detección de anomalías</span>
-            </div>
+        <div className="mt-6 pt-6 border-t border-purple-200/50 dark:border-purple-800/50">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { emoji: '📈', text: 'Análisis Inteligente' },
+              { emoji: '🏷️', text: 'Auto-Categorización' },
+              { emoji: '🔮', text: 'Predicción Gastos' },
+              { emoji: '🛡️', text: 'Detección Anomalías' }
+            ].map((f, i) => (
+              <div key={i} className="flex flex-col items-center text-center p-3 rounded-2xl bg-white/40 dark:bg-slate-900/40 border border-white/20 dark:border-white/5 shadow-glass-sm animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+                <span className="text-xl mb-1">{f.emoji}</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter text-slate-600 dark:text-slate-400 leading-tight">
+                  {f.text}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
