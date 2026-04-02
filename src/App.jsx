@@ -427,8 +427,8 @@ function AppContent() {
             <div className="flex gap-2 bg-slate-100/50 dark:bg-slate-800/50 p-1.5 rounded-2xl">
               {[
                 { id: 'resumen',       label: 'Resumen',       Icon: ChartBar },
-                { id: 'graficos',      label: 'Gráficos',      Icon: ChartLine },
                 { id: 'movimientos',   label: 'Movimientos',   Icon: Receipt },
+                { id: 'graficos',      label: 'Gráficos',      Icon: ChartLine },
                 { id: 'planificacion', label: 'Planificación', Icon: Target },
                 { id: 'herramientas',  label: 'Herramientas',  Icon: Wrench },
               ].map(tab => (
