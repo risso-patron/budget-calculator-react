@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/loading-csv.json';
 import { useAIInsights } from '../../hooks/useAIInsightsMulti';
 import { parseRawText, parseCSVLineFlexible } from '../../core/parserEngine';
 import { findHeaderIndex, normalizeHeader } from '../../core/headerDetector';

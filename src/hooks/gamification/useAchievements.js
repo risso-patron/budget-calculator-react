@@ -171,25 +171,36 @@ export const useAchievements = () => {
    * Actualiza las estadísticas y verifica logros
    */
   const updateStats = useCallback((updates) => {
-    setStats(prev => {
-      const newStats = { ...prev, ...updates };
-      return newStats;
-    });
+    setStats(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Verificar logros cuando cambien las stats
+  // Verificar logros cuando cambien cualquier stat relevante
   useEffect(() => {
     checkAchievements();
-  }, [stats.totalIncomes, stats.totalExpenses, stats.totalGoals, stats.goalsCompleted, stats.currentBalance, stats.creditCardsAdded, checkAchievements]);
+  }, [
+    stats.totalIncomes,
+    stats.totalExpenses,
+    stats.totalGoals,
+    stats.goalsCompleted,
+    stats.currentBalance,
+    stats.creditCardsAdded,
+    stats.currentStreak,
+    stats.usedDarkMode,
+    stats.dataExported,
+    stats.usedAI,
+    stats.goalsOnTrackDays,
+    stats.achievementsUnlocked,
+    checkAchievements,
+  ]);
 
   /**
-   * Incrementa el contador de transacciones
+   * Incrementa el contador de transacciones (sin closure stale)
    */
   const recordTransaction = useCallback((type) => {
     const key = type === 'income' ? 'totalIncomes' : 'totalExpenses';
-    updateStats({ [key]: stats[key] + 1 });
+    setStats(prev => ({ ...prev, [key]: prev[key] + 1 }));
     updateStreak();
-  }, [stats, updateStats, updateStreak]);
+  }, [updateStreak]);
 
   /**
    * Calcula puntos totales
