@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChartBar, ChartLine, Receipt, Target, Wrench } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useTransactions } from './hooks/useTransactions';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { STORAGE_KEYS, STRATEGIC_MESSAGES } from './constants/categories';
@@ -57,6 +57,7 @@ import { InstallPWA } from './components/InstallPWA';
  */
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
+  const { theme } = useTheme();
   const [showAuth, setShowAuth] = useState(false);
   const [showMigration, setShowMigration] = useState(false);
   const [creditCards, setCreditCards] = useLocalStorage(STORAGE_KEYS.CREDIT_CARDS, []);
@@ -327,6 +328,14 @@ function AppContent() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incomes.length, expenses.length, goals.length, balance, creditCards.length]);
+
+  // Registrar uso del modo oscuro para el logro dark_mode
+  useEffect(() => {
+    if (theme === 'dark') {
+      achievements.updateStats({ usedDarkMode: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
 
   // Mostrar página de autenticación si no hay usuario
   if (!user && !authLoading) {
@@ -642,6 +651,7 @@ function AppContent() {
               totalIncome={totalIncome}
               totalExpenses={totalExpenses}
               balance={balance}
+              onExport={() => achievements.updateStats({ dataExported: true })}
             />
 
             <ImportManager

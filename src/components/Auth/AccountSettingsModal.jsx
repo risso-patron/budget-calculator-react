@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { 
   User, 
   ShieldCheck, 
@@ -112,23 +113,25 @@ export const AccountSettingsModal = ({ isOpen, onClose, onShowAlert }) => {
     )
   }
 
-  return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[150] overflow-y-auto p-4">
       {/* Overlay */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-md"
       />
 
-      {/* Modal Container */}
-      <motion.div 
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-white/20 dark:border-white/5 overflow-hidden flex flex-col md:flex-row min-h-[550px]"
-      >
+      {/* Centering wrapper */}
+      <div className="flex min-h-full items-center justify-center py-12">
+        {/* Modal Container */}
+        <motion.div 
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          className="relative w-full max-w-3xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-white/20 dark:border-white/5 overflow-hidden flex flex-col md:flex-row min-h-[550px] max-h-[90vh]"
+        >
         {/* Sidebar Navigation */}
         <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-950 p-8 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 flex flex-col">
           <div className="flex items-center gap-3 mb-10">
@@ -164,7 +167,7 @@ export const AccountSettingsModal = ({ isOpen, onClose, onShowAlert }) => {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 p-8 md:p-12 overflow-y-auto max-h-[80vh] md:max-h-[600px] custom-scrollbar relative">
+        <div className="flex-1 p-8 md:p-12 overflow-y-auto custom-scrollbar relative">
           <button 
             onClick={onClose}
             className="absolute top-8 right-8 text-slate-300 hover:text-slate-500 dark:hover:text-white transition-colors p-2"
@@ -351,6 +354,8 @@ export const AccountSettingsModal = ({ isOpen, onClose, onShowAlert }) => {
           </AnimatePresence>
         </div>
       </motion.div>
-    </div>
+      </div>
+    </div>,
+    document.body
   )
 }

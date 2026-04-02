@@ -9,7 +9,7 @@ import { UpgradeModal } from '../../components/Subscription/UpgradeModal';
 /**
  * Componente para exportar datos a CSV/PDF
  */
-export const ExportManager = ({ incomes, expenses, categoryAnalysis }) => {
+export const ExportManager = ({ incomes, expenses, categoryAnalysis, onExport }) => {
   const { hasFeature } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [blockedFeature, setBlockedFeature] = useState(null);
@@ -45,6 +45,7 @@ export const ExportManager = ({ incomes, expenses, categoryAnalysis }) => {
       const filteredExpenses = filterByDateRange(expenses);
       
       await exportToCSV(filteredIncomes, filteredExpenses, dateRange);
+      onExport?.();
     } catch (error) {
       console.error('Error al exportar CSV:', error);
       alert('Error al exportar CSV. Intenta nuevamente.');
@@ -83,6 +84,7 @@ export const ExportManager = ({ incomes, expenses, categoryAnalysis }) => {
         dateRange,
         includeCharts
       );
+      onExport?.();
     } catch (error) {
       console.error('Error al exportar PDF:', error);
       alert('Error al exportar PDF. Intenta nuevamente.');
