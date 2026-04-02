@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 /**
  * Sistema multi-proveedor de IA - TODAS LAS OPCIONES GRATUITAS
  * 
@@ -19,9 +21,14 @@
 // ====================================
 
 const PROVIDERS = {
+  PROXY: {
+    name: 'Secure Netlify Proxy',
+    free: false,
+    limits: 'Definido por plan y rate limit server-side',
+  },
   GEMINI: {
     name: 'Google Gemini',
-    apiKey: import.meta.env.VITE_GOOGLE_GEMINI_API_KEY,
+    apiKey: null,
     endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent',
     model: 'gemini-2.0-flash-lite',
     maxTokens: 2000,
@@ -30,7 +37,7 @@ const PROVIDERS = {
   },
   GROQ: {
     name: 'Groq',
-    apiKey: import.meta.env.VITE_GROQ_API_KEY,
+    apiKey: null,
     endpoint: 'https://api.groq.com/openai/v1/chat/completions',
     model: 'llama-3.3-70b-versatile',
     maxTokens: 2000,
@@ -39,7 +46,7 @@ const PROVIDERS = {
   },
   ANTHROPIC: {
     name: 'Anthropic Claude',
-    apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+    apiKey: null,
     endpoint: 'https://api.anthropic.com/v1/messages',
     model: 'claude-sonnet-4-20250514',
     maxTokens: 2000,
@@ -86,28 +93,14 @@ const checkRateLimit = (userId) => {
  * Detecta qué proveedores están configurados
  */
 export const getAvailableProviders = () => {
-  const available = [];
-  
-  if (PROVIDERS.GEMINI.apiKey) {
-    available.push({ id: 'GEMINI', ...PROVIDERS.GEMINI });
-  }
-  if (PROVIDERS.GROQ.apiKey) {
-    available.push({ id: 'GROQ', ...PROVIDERS.GROQ });
-  }
-  if (PROVIDERS.ANTHROPIC.apiKey && PROVIDERS.ANTHROPIC.apiKey !== 'your_anthropic_api_key_here') {
-    available.push({ id: 'ANTHROPIC', ...PROVIDERS.ANTHROPIC });
-  }
-  
-  // Verificar si Ollama está corriendo localmente
-  // (esto se hace con un ping en tiempo real)
-  
-  return available;
+  // Seguridad: toda llamada de IA pasa por proxy autenticado server-side.
+  return [{ id: 'PROXY', ...PROVIDERS.PROXY }];
 };
 
 /**
  * Llama a Google Gemini
  */
-const callGemini = async (prompt, maxTokens = 2000) => {
+const _callGemini = async (prompt, maxTokens = 2000) => {
   const apiKey = PROVIDERS.GEMINI.apiKey;
   if (!apiKey) throw new Error('API Key de Gemini no configurada');
 
@@ -151,7 +144,7 @@ const callGemini = async (prompt, maxTokens = 2000) => {
 /**
  * Llama a Groq
  */
-const callGroq = async (prompt, maxTokens = 2000) => {
+const _callGroq = async (prompt, maxTokens = 2000) => {
   const apiKey = PROVIDERS.GROQ.apiKey;
   if (!apiKey) throw new Error('API Key de Groq no configurada');
 
@@ -192,7 +185,7 @@ const callGroq = async (prompt, maxTokens = 2000) => {
 /**
  * Llama a Claude (Anthropic)
  */
-const callClaude = async (prompt, maxTokens = 2000) => {
+const _callClaude = async (prompt, maxTokens = 2000) => {
   const apiKey = PROVIDERS.ANTHROPIC.apiKey;
   if (!apiKey || apiKey === 'your_anthropic_api_key_here') {
     throw new Error('API Key de Claude no configurada');
@@ -235,7 +228,7 @@ const callClaude = async (prompt, maxTokens = 2000) => {
 /**
  * Llama a Ollama (local)
  */
-const callOllama = async (prompt, maxTokens = 2000) => {
+const _callOllama = async (prompt, maxTokens = 2000) => {
   try {
     const response = await fetch(PROVIDERS.OLLAMA.endpoint, {
       method: 'POST',
@@ -276,9 +269,19 @@ const callOllama = async (prompt, maxTokens = 2000) => {
  * En producción, las API keys viven solo en el servidor
  */
 const callViaProxy = async (prompt) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+
+  if (!accessToken) {
+    throw new Error('Debes iniciar sesión para usar análisis de IA.');
+  }
+
   const response = await fetch('/.netlify/functions/ai-proxy', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
     body: JSON.stringify({ prompt, provider: 'auto' }),
   });
 
@@ -294,16 +297,8 @@ const callViaProxy = async (prompt) => {
   return {
     content: data.result,
     provider: data.provider,
-    model: 'proxy',
+    model: 'proxy-secure',
   };
-};
-
-/**
- * Determina si estamos en producción (Netlify)
- */
-const isProduction = () => {
-  return window.location.hostname !== 'localhost' &&
-    window.location.hostname !== '127.0.0.1';
 };
 
 export const callAI = async (prompt, maxTokens = 2000, useCache = true) => {
@@ -318,57 +313,14 @@ export const callAI = async (prompt, maxTokens = 2000, useCache = true) => {
     }
   }
 
-  // En producción: usar proxy seguro (API keys solo en el servidor)
-  if (isProduction()) {
-    try {
-      const result = await callViaProxy(prompt);
-      if (useCache && cacheKey) {
-        responseCache.set(cacheKey, { data: result, timestamp: Date.now() });
-      }
-      return result;
-    } catch (error) {
-      console.warn('⚠️ Proxy falló:', error.message);
-      throw error; // En producción no fallback a keys del cliente
-    }
+  // Seguridad: siempre pasar por proxy autenticado server-side.
+  const result = await callViaProxy(prompt);
+
+  if (useCache && cacheKey) {
+    responseCache.set(cacheKey, { data: result, timestamp: Date.now() });
   }
 
-  // En desarrollo: intentar APIs directamente (con VITE_ keys del .env local)
-  const providers = [
-    { name: 'Gemini', fn: callGemini, enabled: !!PROVIDERS.GEMINI.apiKey },
-    { name: 'Groq', fn: callGroq, enabled: !!PROVIDERS.GROQ.apiKey },
-    { name: 'Claude', fn: callClaude, enabled: !!PROVIDERS.ANTHROPIC.apiKey && PROVIDERS.ANTHROPIC.apiKey !== 'your_anthropic_api_key_here' },
-    { name: 'Ollama', fn: callOllama, enabled: true }, // Siempre intentar si los otros fallan
-  ];
-
-  const errors = [];
-
-  // Intentar cada proveedor habilitado
-  for (const provider of providers.filter(p => p.enabled)) {
-    try {
-      console.log(`🔄 Intentando con ${provider.name}...`);
-      const result = await provider.fn(prompt, maxTokens);
-      
-      console.log(`✅ Respuesta exitosa de ${provider.name}`);
-      
-      // Guardar en caché
-      if (useCache && cacheKey) {
-        responseCache.set(cacheKey, {
-          data: result,
-          timestamp: Date.now()
-        });
-      }
-      
-      return result;
-    } catch (error) {
-      console.warn(`⚠️ ${provider.name} falló:`, error.message);
-      errors.push({ provider: provider.name, error: error.message });
-      continue; // Intentar siguiente proveedor
-    }
-  }
-
-  // Si llegamos aquí, todos fallaron
-  const errorMsg = errors.map(e => `${e.provider}: ${e.error}`).join('\n');
-  throw new Error(`❌ Todos los proveedores de IA fallaron:\n${errorMsg}`);
+  return result;
 };
 
 /**
@@ -648,25 +600,30 @@ Responde SOLO JSON sin explicaciones:
  */
 export const getProviderStatus = () => {
   return {
-    gemini: {
-      configured: !!PROVIDERS.GEMINI.apiKey,
-      free: true,
+    proxy: {
+      configured: true,
+      free: false,
       priority: 1,
     },
-    groq: {
-      configured: !!PROVIDERS.GROQ.apiKey,
+    gemini: {
+      configured: false,
       free: true,
       priority: 2,
     },
-    claude: {
-      configured: !!PROVIDERS.ANTHROPIC.apiKey && PROVIDERS.ANTHROPIC.apiKey !== 'your_anthropic_api_key_here',
-      free: false,
+    groq: {
+      configured: false,
+      free: true,
       priority: 3,
     },
-    ollama: {
-      configured: true,
-      free: true,
+    claude: {
+      configured: false,
+      free: false,
       priority: 4,
+    },
+    ollama: {
+      configured: false,
+      free: true,
+      priority: 5,
       requiresInstall: true,
     },
   };

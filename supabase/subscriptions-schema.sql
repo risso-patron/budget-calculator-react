@@ -51,14 +51,13 @@ CREATE POLICY "Users can insert own subscription" ON subscriptions
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- Policy: Los usuarios pueden actualizar su propia suscripción
-CREATE POLICY "Users can update own subscription" ON subscriptions
-  FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+-- IMPORTANTE DE SEGURIDAD:
+-- NO permitir UPDATE directo desde cliente autenticado.
+-- Cualquier cambio de plan/estado debe pasar por backend seguro (webhook/función server-side).
+-- Por eso no se crea policy FOR UPDATE para authenticated.
 
--- Policy: Los usuarios NO pueden eliminar suscripciones (solo actualizar status)
--- Si necesitas eliminar, hazlo manualmente desde el dashboard de Supabase
+-- Policy: Los usuarios NO pueden eliminar suscripciones
+-- Si necesitas eliminar, hazlo desde backend seguro o dashboard de Supabase
 
 -- Función para actualizar updated_at automáticamente
 CREATE OR REPLACE FUNCTION update_updated_at_column()

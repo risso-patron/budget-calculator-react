@@ -1,3 +1,6 @@
+/* eslint-env node */
+/* global process */
+
 /**
  * Netlify Function: AI Proxy
  *
@@ -13,6 +16,8 @@
  * (Sin prefijo VITE_ → no se incluyen en el bundle del cliente)
  */
 
+import { createClient } from '@supabase/supabase-js';
+
 // Rate limiting en memoria (se resetea por instancia de función)
 // En producción seria Redis u otro store persistente
 const rateLimits = new Map();
@@ -22,9 +27,9 @@ const WINDOW_MS = 60 * 1000; // 1 minuto
 /**
  * Verifica rate limit por IP
  */
-function checkRateLimit(ip) {
+function checkRateLimit(identityKey) {
   const now = Date.now();
-  const requests = rateLimits.get(ip) || [];
+  const requests = rateLimits.get(identityKey) || [];
   const recent = requests.filter(t => now - t < WINDOW_MS);
 
   if (recent.length >= MAX_REQUESTS_PER_MINUTE) {
@@ -32,8 +37,47 @@ function checkRateLimit(ip) {
   }
 
   recent.push(now);
-  rateLimits.set(ip, recent);
+  rateLimits.set(identityKey, recent);
   return true;
+}
+
+function getAllowedOrigins() {
+  const raw = process.env.ALLOWED_ORIGINS || '';
+  return raw
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function isOriginAllowed(origin) {
+  const allowed = getAllowedOrigins();
+  if (!origin || allowed.length === 0) return true;
+  return allowed.includes(origin);
+}
+
+async function authenticateRequest(event) {
+  const authHeader = event.headers.authorization || event.headers.Authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('missing_auth');
+  }
+
+  const token = authHeader.slice('Bearer '.length).trim();
+  if (!token) throw new Error('missing_auth');
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('supabase_not_configured');
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const { data, error } = await supabase.auth.getUser(token);
+
+  if (error || !data?.user?.id) {
+    throw new Error('invalid_auth');
+  }
+
+  return data.user;
 }
 
 /**
@@ -126,17 +170,41 @@ async function callAnthropic(prompt) {
 /**
  * Handler principal de la Netlify Function
  */
-exports.handler = async (event) => {
+export const handler = async (event) => {
   // Solo aceptar POST
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Método no permitido' }) };
   }
 
+  const origin = event.headers.origin || event.headers.Origin;
+  if (!isOriginAllowed(origin)) {
+    return {
+      statusCode: 403,
+      body: JSON.stringify({ error: 'Origen no permitido' }),
+    };
+  }
+
+  let user;
+  try {
+    user = await authenticateRequest(event);
+  } catch (authError) {
+    const statusCode = authError.message === 'supabase_not_configured' ? 500 : 401;
+    const message = authError.message === 'supabase_not_configured'
+      ? 'Servicio temporalmente no disponible'
+      : 'No autorizado';
+
+    return {
+      statusCode,
+      body: JSON.stringify({ error: message }),
+    };
+  }
+
   // Obtener IP del cliente para rate limiting
   const clientIp = event.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
+  const rateLimitKey = `${user.id}:${clientIp}`;
 
   // Verificar rate limit
-  if (!checkRateLimit(clientIp)) {
+  if (!checkRateLimit(rateLimitKey)) {
     return {
       statusCode: 429,
       body: JSON.stringify({ error: 'Demasiadas solicitudes. Espera 1 minuto.' }),
@@ -155,6 +223,10 @@ exports.handler = async (event) => {
 
   if (!prompt || typeof prompt !== 'string') {
     return { statusCode: 400, body: JSON.stringify({ error: 'El campo "prompt" es requerido' }) };
+  }
+
+  if (!['auto', 'gemini', 'groq', 'anthropic'].includes(provider)) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Proveedor inválido' }) };
   }
 
   // Sanitizar el prompt antes de enviarlo a la IA
@@ -189,8 +261,22 @@ exports.handler = async (event) => {
     }
   }
 
+  console.error('[ai-proxy] providers_failed', {
+    userId: user.id,
+    provider,
+    error: lastError,
+  });
+
   return {
     statusCode: 503,
-    body: JSON.stringify({ error: `Todos los proveedores fallaron: ${lastError}` }),
+    body: JSON.stringify({ error: 'No se pudo procesar la solicitud de IA en este momento.' }),
   };
+};
+
+// Exportes internos solo para pruebas de seguridad.
+export const __private = {
+  checkRateLimit,
+  sanitizePrompt,
+  isOriginAllowed,
+  clearRateLimits: () => rateLimits.clear(),
 };

@@ -2,6 +2,31 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
+const callSubscriptionManager = async (action, payload = {}) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  if (!token) {
+    throw new Error('Debes iniciar sesión para gestionar tu suscripción');
+  }
+
+  const response = await fetch('/.netlify/functions/subscription-manage', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ action, ...payload }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || 'No se pudo actualizar la suscripción');
+  }
+
+  return data;
+};
+
 /**
  * Hook para gestionar suscripciones y planes de usuario
  * 
@@ -119,24 +144,16 @@ export const useSubscription = () => {
   // Actualizar suscripción (después de pago exitoso)
   const updateSubscription = async (newPlanType, stripeData = {}) => {
     try {
-      const updateData = {
-        plan_type: newPlanType,
-        status: 'active',
-        updated_at: new Date().toISOString(),
-        ...stripeData,
-      };
+      if (newPlanType !== 'free') {
+        return {
+          success: false,
+          error: 'Los upgrades de plan solo pueden procesarse desde backend seguro (webhook de pagos).',
+        };
+      }
 
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .update(updateData)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setSubscription(data);
-      return { success: true, data };
+      const result = await callSubscriptionManager('downgrade_to_free', { stripeData });
+      setSubscription(result.subscription);
+      return { success: true, data: result.subscription };
     } catch (err) {
       console.error('Error updating subscription:', err);
       return { success: false, error: err.message };
@@ -146,19 +163,8 @@ export const useSubscription = () => {
   // Cancelar suscripción
   const cancelSubscription = async () => {
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .update({
-          cancel_at_period_end: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setSubscription(data);
+      const result = await callSubscriptionManager('cancel_at_period_end');
+      setSubscription(result.subscription);
       return { success: true };
     } catch (err) {
       console.error('Error canceling subscription:', err);
