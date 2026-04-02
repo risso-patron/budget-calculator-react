@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { sanitizeCSVCell } from './csvSecurity';
 
 /**
  * Exportar transacciones a CSV
@@ -11,15 +12,15 @@ export const exportToCSV = (incomes, expenses, dateRange) => {
     ...incomes.map(i => ({
       Fecha: new Date(i.date).toLocaleDateString('es-ES'),
       Tipo: 'Ingreso',
-      Descripción: i.description,
+      Descripción: sanitizeCSVCell(i.description),
       Categoría: '-',
       Monto: i.amount,
     })),
     ...expenses.map(e => ({
       Fecha: new Date(e.date).toLocaleDateString('es-ES'),
       Tipo: 'Gasto',
-      Descripción: e.description,
-      Categoría: e.category,
+      Descripción: sanitizeCSVCell(e.description),
+      Categoría: sanitizeCSVCell(e.category),
       Monto: -e.amount, // Negativo para gastos
     })),
   ].sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
