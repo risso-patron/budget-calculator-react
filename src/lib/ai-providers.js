@@ -1,19 +1,9 @@
 import { supabase } from './supabase';
 
 /**
- * Sistema multi-proveedor de IA - TODAS LAS OPCIONES GRATUITAS
- * 
- * PROVEEDORES SOPORTADOS (en orden de prioridad):
- * 1. Google Gemini 1.5 Flash (GRATIS: 1500 req/día)
- * 2. Groq Llama 3.3 70B (GRATIS: 30 req/min)
- * 3. Anthropic Claude (PAGO: $5 crédito inicial)
- * 4. Ollama Local (GRATIS: ilimitado, requiere instalación)
- * 
- * COSTOS:
- * - Gemini: $0 (completamente gratis)
- * - Groq: $0 (completamente gratis)
- * - Anthropic: ~$0.01 por análisis
- * - Ollama: $0 (local, sin límites)
+ * Proveedor de IA: Groq (Llama 3.3 70B)
+ * Todas las llamadas pasan por el proxy seguro de Netlify Functions.
+ * La API key vive solo en el servidor (variable de entorno GROQ_API_KEY).
  */
 
 // ====================================
@@ -23,44 +13,16 @@ import { supabase } from './supabase';
 const PROVIDERS = {
   PROXY: {
     name: 'Secure Netlify Proxy',
-    free: false,
+    free: true,
     limits: 'Definido por plan y rate limit server-side',
   },
-  GEMINI: {
-    name: 'Google Gemini',
-    apiKey: null,
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent',
-    model: 'gemini-2.0-flash-lite',
-    maxTokens: 2000,
-    free: true,
-    limits: '1500 requests/día',
-  },
   GROQ: {
-    name: 'Groq',
-    apiKey: null,
+    name: 'Groq (Llama 3.3 70B)',
     endpoint: 'https://api.groq.com/openai/v1/chat/completions',
     model: 'llama-3.3-70b-versatile',
     maxTokens: 2000,
     free: true,
     limits: '30 requests/minuto',
-  },
-  ANTHROPIC: {
-    name: 'Anthropic Claude',
-    apiKey: null,
-    endpoint: 'https://api.anthropic.com/v1/messages',
-    model: 'claude-sonnet-4-20250514',
-    maxTokens: 2000,
-    free: false,
-    limits: 'Según plan',
-  },
-  OLLAMA: {
-    name: 'Ollama Local',
-    apiKey: null, // No requiere API key
-    endpoint: 'http://localhost:11434/api/generate',
-    model: 'llama3.2:3b',
-    maxTokens: 2000,
-    free: true,
-    limits: 'Ilimitado (local)',
   },
 };
 
@@ -98,175 +60,8 @@ export const getAvailableProviders = () => {
 };
 
 /**
- * Llama a Google Gemini
- */
-const _callGemini = async (prompt, maxTokens = 2000) => {
-  const apiKey = PROVIDERS.GEMINI.apiKey;
-  if (!apiKey) throw new Error('API Key de Gemini no configurada');
-
-  const url = `${PROVIDERS.GEMINI.endpoint}?key=${apiKey}`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        maxOutputTokens: maxTokens,
-        temperature: 0.7,
-      }
-    })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Error en Gemini API');
-  }
-
-  const data = await response.json();
-  const text = data.candidates[0]?.content?.parts[0]?.text;
-  
-  if (!text) throw new Error('Respuesta vacía de Gemini');
-
-  return {
-    content: text,
-    provider: 'gemini',
-    model: PROVIDERS.GEMINI.model,
-  };
-};
-
-/**
- * Llama a Groq
- */
-const _callGroq = async (prompt, maxTokens = 2000) => {
-  const apiKey = PROVIDERS.GROQ.apiKey;
-  if (!apiKey) throw new Error('API Key de Groq no configurada');
-
-  const response = await fetch(PROVIDERS.GROQ.endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: PROVIDERS.GROQ.model,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }],
-      max_tokens: maxTokens,
-      temperature: 0.7,
-    })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Error en Groq API');
-  }
-
-  const data = await response.json();
-  const text = data.choices[0]?.message?.content;
-  
-  if (!text) throw new Error('Respuesta vacía de Groq');
-
-  return {
-    content: text,
-    provider: 'groq',
-    model: PROVIDERS.GROQ.model,
-  };
-};
-
-/**
- * Llama a Claude (Anthropic)
- */
-const _callClaude = async (prompt, maxTokens = 2000) => {
-  const apiKey = PROVIDERS.ANTHROPIC.apiKey;
-  if (!apiKey || apiKey === 'your_anthropic_api_key_here') {
-    throw new Error('API Key de Claude no configurada');
-  }
-
-  const response = await fetch(PROVIDERS.ANTHROPIC.endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: PROVIDERS.ANTHROPIC.model,
-      max_tokens: maxTokens,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
-    })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Error en Claude API');
-  }
-
-  const data = await response.json();
-  const text = data.content[0]?.text;
-  
-  if (!text) throw new Error('Respuesta vacía de Claude');
-
-  return {
-    content: text,
-    provider: 'claude',
-    model: PROVIDERS.ANTHROPIC.model,
-  };
-};
-
-/**
- * Llama a Ollama (local)
- */
-const _callOllama = async (prompt, maxTokens = 2000) => {
-  try {
-    const response = await fetch(PROVIDERS.OLLAMA.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: PROVIDERS.OLLAMA.model,
-        prompt: prompt,
-        stream: false,
-        options: {
-          num_predict: maxTokens,
-          temperature: 0.7,
-        }
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Ollama no está corriendo o no responde');
-    }
-
-    const data = await response.json();
-    
-    if (!data.response) throw new Error('Respuesta vacía de Ollama');
-
-    return { content: data.response, provider: 'ollama', model: PROVIDERS.OLLAMA.model };
-  } catch {
-    throw new Error('Ollama no disponible. ¿Está corriendo? (ollama serve)');
-  }
-};
-
-/**
- * Llamada inteligente con fallback automático
- * Intenta proveedores en orden hasta que uno responda
- */
-/**
  * Llama al proxy seguro de Netlify Functions
- * En producción, las API keys viven solo en el servidor
+ * La API key (GROQ_API_KEY) vive solo en el servidor
  */
 const callViaProxy = async (prompt) => {
   const { data: { session } } = await supabase.auth.getSession();
@@ -613,29 +408,15 @@ export const getProviderStatus = () => {
   return {
     proxy: {
       configured: true,
-      free: false,
+      free: true,
       priority: 1,
     },
-    gemini: {
-      configured: false,
+    groq: {
+      // La API key vive en el servidor (Netlify env var GROQ_API_KEY)
+      // La configuración correcta se valida server-side, no client-side
+      configured: true,
       free: true,
       priority: 2,
-    },
-    groq: {
-      configured: false,
-      free: true,
-      priority: 3,
-    },
-    claude: {
-      configured: false,
-      free: false,
-      priority: 4,
-    },
-    ollama: {
-      configured: false,
-      free: true,
-      priority: 5,
-      requiresInstall: true,
     },
   };
 };

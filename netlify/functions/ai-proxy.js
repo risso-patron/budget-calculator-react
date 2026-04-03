@@ -93,35 +93,11 @@ function sanitizePrompt(text) {
 }
 
 /**
- * Llama a Google Gemini
- */
-async function callGemini(prompt) {
-  const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
-  if (!apiKey) throw new Error('Gemini no configurado');
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 1000 },
-      }),
-    }
-  );
-
-  if (!response.ok) throw new Error(`Gemini error: ${response.status}`);
-  const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-}
-
-/**
  * Llama a Groq
  */
 async function callGroq(prompt) {
   const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error('Groq no configurado');
+  if (!apiKey) throw new Error('Groq no configurado. Agrega GROQ_API_KEY en Netlify Environment Variables.');
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -139,32 +115,6 @@ async function callGroq(prompt) {
   if (!response.ok) throw new Error(`Groq error: ${response.status}`);
   const data = await response.json();
   return data.choices?.[0]?.message?.content || '';
-}
-
-/**
- * Llama a Anthropic Claude
- */
-async function callAnthropic(prompt) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error('Anthropic no configurado');
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
-
-  if (!response.ok) throw new Error(`Anthropic error: ${response.status}`);
-  const data = await response.json();
-  return data.content?.[0]?.text || '';
 }
 
 /**
@@ -225,7 +175,7 @@ export const handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'El campo "prompt" es requerido' }) };
   }
 
-  if (!['auto', 'gemini', 'groq', 'anthropic'].includes(provider)) {
+  if (!['auto', 'groq'].includes(provider)) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Proveedor inválido' }) };
   }
 
@@ -235,42 +185,21 @@ export const handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Prompt inválido después de sanitización' }) };
   }
 
-  // Intentar proveedores en orden de prioridad
-  const providerOrder = provider === 'auto'
-    ? ['gemini', 'groq', 'anthropic']
-    : [provider];
-
-  let lastError = null;
-
-  for (const p of providerOrder) {
-    try {
-      let result;
-      if (p === 'gemini') result = await callGemini(safePrompt);
-      else if (p === 'groq') result = await callGroq(safePrompt);
-      else if (p === 'anthropic') result = await callAnthropic(safePrompt);
-      else continue;
-
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ result, provider: p }),
-      };
-    } catch (error) {
-      lastError = error.message;
-      // Continuar con el siguiente proveedor
-    }
+  // Llamar a Groq
+  try {
+    const result = await callGroq(safePrompt);
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ result, provider: 'groq' }),
+    };
+  } catch (error) {
+    console.error('[ai-proxy] groq_failed', { userId: user.id, error: error.message });
+    return {
+      statusCode: 503,
+      body: JSON.stringify({ error: 'Groq no disponible. Verifica la API key en Netlify.' }),
+    };
   }
-
-  console.error('[ai-proxy] providers_failed', {
-    userId: user.id,
-    provider,
-    error: lastError,
-  });
-
-  return {
-    statusCode: 503,
-    body: JSON.stringify({ error: 'No se pudo procesar la solicitud de IA en este momento.' }),
-  };
 };
 
 // Exportes internos solo para pruebas de seguridad.
