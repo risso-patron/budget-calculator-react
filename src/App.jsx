@@ -118,7 +118,7 @@ function AppContent() {
     ...expenses.map(expense => ({ ...expense, type: 'expense' }))
   ], [incomes, expenses]);
 
-  // Hook de IA con multi-proveedores (Gemini, Groq, Claude, Ollama)
+  // Hook de IA con Groq (Llama 3.3 70B) vía proxy seguro
   const aiInsights = useAIInsights(allTransactions);
 
   // ── Tabs y filtro de período persistentes (Fase UX 1) ───────────────────

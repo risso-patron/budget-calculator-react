@@ -50,62 +50,28 @@ export default function AIProviderStatus() {
         </button>
       </div>
 
-      {/* Estado de proveedores */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Google Gemini */}
-        <div className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
-          status.gemini.configured 
-            ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 shadow-sm shadow-emerald-500/10' 
-            : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800'
-        }`}>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 shadow-md flex items-center justify-center text-xl">
-              ✨
-            </div>
-            <div>
-              <span className="font-black text-slate-800 dark:text-white block uppercase tracking-wider text-xs">Gemini</span>
-              <span className={`text-[10px] font-bold uppercase ${
-                status.gemini.configured 
-                  ? 'text-emerald-600 dark:text-emerald-400' 
-                  : 'text-slate-400'
-              }`}>
-                {status.gemini.configured ? '● Activo' : '○ Offline'}
-              </span>
-            </div>
-          </div>
-          {status.gemini.configured && (
-            <div className="flex items-center gap-1.5 mt-2 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 rounded-full w-fit">
-              <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-tighter">Plan Gratuito</span>
-            </div>
-          )}
-        </div>
-
-        {/* Groq */}
-        <div className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
-          status.groq.configured 
-            ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 shadow-sm shadow-amber-500/10' 
-            : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800'
-        }`}>
+      {/* Estado de proveedor: Groq */}
+      <div className="grid grid-cols-1 gap-4">
+        <div className="p-4 rounded-2xl border-2 transition-all duration-300 bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 shadow-sm shadow-amber-500/10">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 shadow-md flex items-center justify-center text-xl">
               ⚡
             </div>
             <div>
-              <span className="font-black text-slate-800 dark:text-white block uppercase tracking-wider text-xs">Groq</span>
-              <span className={`text-[10px] font-bold uppercase ${
-                status.groq.configured 
-                  ? 'text-amber-600 dark:text-amber-400' 
-                  : 'text-slate-400'
-              }`}>
-                {status.groq.configured ? '● Activo' : '○ Offline'}
+              <span className="font-black text-slate-800 dark:text-white block uppercase tracking-wider text-xs">Groq — Llama 3.3 70B</span>
+              <span className="text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
+                ● Activo vía proxy seguro
               </span>
             </div>
           </div>
-          {status.groq.configured && (
-            <div className="flex items-center gap-1.5 mt-2 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded-full w-fit">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded-full w-fit">
               <span className="text-[10px] font-black text-amber-700 dark:text-amber-300 uppercase tracking-tighter">Alta Velocidad</span>
             </div>
-          )}
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 dark:bg-green-900/40 rounded-full w-fit">
+              <span className="text-[10px] font-black text-green-700 dark:text-green-300 uppercase tracking-tighter">Gratis · 30 req/min</span>
+            </div>
+          </div>
         </div>
       </div>
 
