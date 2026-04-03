@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { STORAGE_KEYS, TRANSACTION_TYPES, EXPENSE_CATEGORIES } from '../constants/categories';
@@ -47,6 +47,15 @@ export const useTransactions = () => {
     if (!type) { setAlert(null); return; }
     setAlert({ type, message });
     setTimeout(() => setAlert(null), 3000);
+  }, []);
+
+  // Indicador de sincronización con la nube
+  const [syncStatus, setSyncStatus] = useState('idle');
+  const syncTimerRef = useRef(null);
+  const markSaved = useCallback(() => {
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    setSyncStatus('saved');
+    syncTimerRef.current = setTimeout(() => setSyncStatus('idle'), 3000);
   }, []);
 
   // Actualiza localStorage cada vez que cambia el estado (caché de respaldo)
@@ -129,8 +138,9 @@ export const useTransactions = () => {
     setIncomes(prev => [...prev, newIncome]);
     showAlert('success', 'Ingreso agregado exitosamente');
     syncInsert(newIncome);
+    markSaved();
     return true;
-  }, [showAlert, syncInsert]);
+  }, [showAlert, syncInsert, markSaved]);
 
   const addExpense = useCallback((description, category, amount, date = null) => {
     const validation = validateTransaction(
@@ -156,8 +166,9 @@ export const useTransactions = () => {
     setExpenses(prev => [...prev, newExpense]);
     showAlert('success', 'Gasto agregado exitosamente');
     syncInsert(newExpense);
+    markSaved();
     return true;
-  }, [showAlert, syncInsert]);
+  }, [showAlert, syncInsert, markSaved]);
 
   const updateIncome = useCallback((id, updates) => {
     const validation = validateTransaction(updates);
@@ -174,8 +185,9 @@ export const useTransactions = () => {
     }));
     showAlert('success', 'Ingreso actualizado');
     if (updated) syncUpdate(updated);
+    markSaved();
     return true;
-  }, [showAlert, syncUpdate]);
+  }, [showAlert, syncUpdate, markSaved]);
 
   const updateExpense = useCallback((id, updates) => {
     const validation = validateTransaction(updates, true, EXPENSE_CATEGORIES);
@@ -192,20 +204,23 @@ export const useTransactions = () => {
     }));
     showAlert('success', 'Gasto actualizado');
     if (updated) syncUpdate(updated);
+    markSaved();
     return true;
-  }, [showAlert, syncUpdate]);
+  }, [showAlert, syncUpdate, markSaved]);
 
   const removeIncome = useCallback((id) => {
     setIncomes(prev => prev.filter(i => i.id !== id));
     showAlert('success', 'Ingreso eliminado');
     syncDelete(id);
-  }, [showAlert, syncDelete]);
+    markSaved();
+  }, [showAlert, syncDelete, markSaved]);
 
   const removeExpense = useCallback((id) => {
     setExpenses(prev => prev.filter(e => e.id !== id));
     showAlert('success', 'Gasto eliminado');
     syncDelete(id);
-  }, [showAlert, syncDelete]);
+    markSaved();
+  }, [showAlert, syncDelete, markSaved]);
 
   const clearAll = useCallback(() => {
     setIncomes([]);
@@ -255,6 +270,7 @@ export const useTransactions = () => {
     const total = newIncomes.length + newExpenses.length;
     if (total > 0) {
       showAlert('success', `${total} transacciones importadas exitosamente`);
+      markSaved();
 
       // Sync batch a Supabase en background
       if (user) {
@@ -311,6 +327,8 @@ export const useTransactions = () => {
     filter,
     alert,
     loading,
+    syncStatus,
+    syncStatus,
     addIncome,
     addExpense,
     addBulkTransactions,
@@ -328,4 +346,4 @@ export const useTransactions = () => {
     categoryAnalysis,
     filteredTransactions,
   };
-};
+};
