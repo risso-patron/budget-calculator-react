@@ -22,7 +22,7 @@ export const AppFooter = () => (
           <Coffee size={15} weight="fill" className="text-amber-400" />
           {' '}por{' '}
           <a
-            href="https://www.linkedin.com/in/jorge-luis-risso-/"
+            href="https://www.risso-patron.com"
             target="_blank"
             rel="noopener noreferrer"
             className="font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors uppercase tracking-tight"
