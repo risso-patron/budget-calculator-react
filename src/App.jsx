@@ -388,19 +388,19 @@ function AppContent() {
       />
 
       {/* Container principal */}
-      <div className="max-w-7xl mx-auto py-10">
+      <div className="max-w-7xl mx-auto py-4 sm:py-10 px-2 sm:px-0">
         {/* Header Pastel minimalista */}
-        <header className="relative z-50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-4xl px-8 pt-8 pb-6 mb-10 shadow-glass border border-white/40 dark:border-white/5">
+        <header className="relative z-50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-3xl sm:rounded-4xl px-4 sm:px-8 pt-5 sm:pt-8 pb-4 sm:pb-6 mb-4 sm:mb-10 shadow-glass border border-white/40 dark:border-white/5">
 
           {/* Fila 1: Título + controles */}
-          <div className="flex justify-between items-start gap-4 mb-8">
-            <div className="min-w-0">
+          <div className="flex justify-between items-start gap-2 sm:gap-4 mb-5 sm:mb-8">
+            <div className="min-w-0 flex-1">
               <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">
                 <span className="hidden sm:inline">Calculadora Presupuestaria</span>
-                <span className="sm:hidden text-3xl leading-none">Mi Presupuesto</span>
+                <span className="sm:hidden leading-none">Mi Presupuesto</span>
               </h1>
-              <div className="h-6 flex items-center gap-2 mt-2 ml-1">
-                <p className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider animate-fade-in-slide">
+              <div className="h-5 flex items-center gap-2 mt-1.5 ml-0.5">
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider animate-fade-in-slide truncate">
                   {quote}
                 </p>
                 {syncStatus === 'saved' && (
@@ -424,7 +424,7 @@ function AppContent() {
           {/* Fila 2: Tabs + selector de año */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Tabs de navegación Estilo Pastel */}
-            <div className="flex gap-2 bg-slate-100/50 dark:bg-slate-800/50 p-1.5 rounded-2xl">
+            <div className="flex gap-1 sm:gap-2 bg-slate-100/50 dark:bg-slate-800/50 p-1 sm:p-1.5 rounded-2xl overflow-x-auto">
               {[
                 { id: 'resumen',       label: 'Resumen',       Icon: ChartBar },
                 { id: 'movimientos',   label: 'Movimientos',   Icon: Receipt },
@@ -435,14 +435,14 @@ function AppContent() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-500 ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-500 shrink-0 ${
                     activeTab === tab.id
                       ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-premium'
                       : 'text-slate-500 dark:text-slate-400 hover:text-primary-600 hover:bg-white/20'
                   }`}
                 >
                   <tab.Icon size={16} weight={activeTab === tab.id ? 'fill' : 'regular'} />
-                  <span className="hidden xs:inline">{tab.label}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -535,7 +535,7 @@ function AppContent() {
         )}
 
         {/* Main content grid */}
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-8">
           
           <DailyReminder />
 
