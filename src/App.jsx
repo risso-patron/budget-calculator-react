@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ChartBar, ChartLine, Receipt, Target, Wrench, CloudCheck, X } from '@phosphor-icons/react';
+import { ChartBar, ChartLine, Receipt, Target, Wrench, CheckCircle, X } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useTransactions } from './hooks/useTransactions';
@@ -452,7 +452,7 @@ function AppContent() {
                 </p>
                 {syncStatus === 'saved' && (
                   <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full animate-fade-in-slide">
-                    <CloudCheck size={11} weight="fill" className="text-emerald-500" />
+                    <CheckCircle size={11} weight="fill" className="text-emerald-500" />
                     <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Guardado</span>
                   </span>
                 )}
@@ -560,7 +560,7 @@ function AppContent() {
         {/* Banner bienvenida — una vez por sesión al sincronizar datos desde la nube */}
         {welcomeBanner !== null && (
           <div className="flex items-center gap-3 bg-emerald-50/80 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-5 py-3.5 mb-6 backdrop-blur-sm animate-fade-in-slide">
-            <CloudCheck size={20} weight="fill" className="text-emerald-500 shrink-0" />
+            <CheckCircle size={20} weight="fill" className="text-emerald-500 shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300 leading-tight">
                 Bienvenido de nuevo — tus datos están seguros en la nube

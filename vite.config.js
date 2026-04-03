@@ -59,11 +59,9 @@ export default defineConfig(({ mode }) => ({
             return 'vendor-supabase';
           }
 
-          // UI utilities → inputs numéricos, confetti
-          // NOTA: @phosphor-icons NO va aquí porque cada icono llama
-          // React.forwardRef() al inicializarse (igual que framer-motion).
-          // Se queda en el bundle principal para garantizar orden de carga.
-          if (id.includes('node_modules/react-number-format') ||
+          // UI utilities → iconos, inputs numéricos, confetti
+          if (id.includes('node_modules/@phosphor-icons') ||
+              id.includes('node_modules/react-number-format') ||
               id.includes('node_modules/react-confetti')) {
             return 'vendor-ui';
           }
