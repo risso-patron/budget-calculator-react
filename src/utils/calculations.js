@@ -50,12 +50,16 @@ export const calculateCategoryAnalysis = (expenses = [], totalExpenses = 0) => {
  * @param {number|null} year - Año a filtrar (null para no filtrar).
  * @returns {Array} Lista filtrada.
  */
+// Normaliza cualquier string de fecha a YYYY-MM-DD antes de parsear.
+// Esto maneja: "YYYY-MM-DD", ISO completos "YYYY-MM-DDTHH:mm:ss+TZ", etc.
+const parseYear  = (dateStr) => { const d = new Date(String(dateStr).substring(0, 10) + 'T12:00:00'); return isNaN(d) ? null : d.getFullYear(); };
+const parseDate  = (dateStr) => { const d = new Date(String(dateStr).substring(0, 10) + 'T12:00:00'); return isNaN(d) ? null : d; };
+
 export const filterByYear = (items = [], year = null) => {
   if (!year) return items;
   return items.filter(item => {
     if (!item.date) return false;
-    // Usamos T12:00:00 para evitar problemas de zona horaria al obtener el año
-    return new Date(item.date + 'T12:00:00').getFullYear() === year;
+    return parseYear(item.date) === year;
   });
 };
 
@@ -69,7 +73,8 @@ export const filterByYear = (items = [], year = null) => {
 export const filterByMonth = (items = [], year, month) => {
   return items.filter(item => {
     if (!item.date) return false;
-    const d = new Date(item.date + 'T12:00:00');
+    const d = parseDate(item.date);
+    if (!d) return false;
     return d.getFullYear() === year && d.getMonth() === month;
   });
 };
@@ -83,9 +88,9 @@ export const filterByMonth = (items = [], year, month) => {
 export const getAvailableYears = (incomes = [], expenses = []) => {
   const years = new Set();
   const process = t => {
-    if (t.date) {
-      years.add(new Date(t.date + 'T12:00:00').getFullYear());
-    }
+    if (!t.date) return;
+    const y = parseYear(t.date);
+    if (y !== null) years.add(y);
   };
   incomes.forEach(process);
   expenses.forEach(process);
@@ -104,8 +109,8 @@ export const getAvailableMonths = (incomes = [], expenses = [], year) => {
   const months = new Set();
   const process = t => {
     if (!t.date) return;
-    const d = new Date(t.date + 'T12:00:00');
-    if (d.getFullYear() === year) months.add(d.getMonth());
+    const d = parseDate(t.date);
+    if (d && d.getFullYear() === year) months.add(d.getMonth());
   };
   incomes.forEach(process);
   expenses.forEach(process);
