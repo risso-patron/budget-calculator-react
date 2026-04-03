@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { ChartBar, ChartLine, Receipt, Target, Wrench } from '@phosphor-icons/react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { ChartBar, ChartLine, Receipt, Target, Wrench, CloudCheck, X } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useTransactions } from './hooks/useTransactions';
@@ -78,6 +78,19 @@ function AppContent() {
     setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
   }, []);
 
+  // Banner de bienvenida — se muestra una vez por sesión al cargar datos desde la nube
+  const [welcomeBanner, setWelcomeBanner] = useState(null);
+  const lastShownUserId = useRef(null);
+  useEffect(() => {
+    if (user && !loading && lastShownUserId.current !== user.id) {
+      lastShownUserId.current = user.id;
+      const count = (incomes?.length ?? 0) + (expenses?.length ?? 0);
+      setWelcomeBanner(count);
+      const timer = setTimeout(() => setWelcomeBanner(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [user?.id, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const closeConfirm = useCallback(() => {
     setConfirmDialog(prev => ({ ...prev, isOpen: false, onConfirm: null }));
   }, []);
@@ -104,6 +117,8 @@ function AppContent() {
     categoryAnalysis,
     clearAll,
     refreshTransactions,
+    loading,
+    syncStatus,
   } = useTransactions();
 
   // Hook de gamificación
@@ -431,10 +446,16 @@ function AppContent() {
                 <span className="hidden sm:inline">Calculadora Presupuestaria</span>
                 <span className="sm:hidden text-3xl leading-none">Mi Presupuesto</span>
               </h1>
-              <div className="h-6 flex items-center mt-2 ml-1">
+              <div className="h-6 flex items-center gap-2 mt-2 ml-1">
                 <p className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider animate-fade-in-slide">
                   {quote}
                 </p>
+                {syncStatus === 'saved' && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full animate-fade-in-slide">
+                    <CloudCheck size={11} weight="fill" className="text-emerald-500" />
+                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Guardado</span>
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
@@ -535,6 +556,30 @@ function AppContent() {
             )}
           </div>
         </header>
+
+        {/* Banner bienvenida — una vez por sesión al sincronizar datos desde la nube */}
+        {welcomeBanner !== null && (
+          <div className="flex items-center gap-3 bg-emerald-50/80 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-5 py-3.5 mb-6 backdrop-blur-sm animate-fade-in-slide">
+            <CloudCheck size={20} weight="fill" className="text-emerald-500 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300 leading-tight">
+                Bienvenido de nuevo — tus datos están seguros en la nube
+              </p>
+              {welcomeBanner > 0 && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  {welcomeBanner} transacción{welcomeBanner !== 1 ? 'es' : ''} sincronizada{welcomeBanner !== 1 ? 's' : ''} correctamente
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setWelcomeBanner(null)}
+              className="ml-auto text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors shrink-0 p-1"
+              aria-label="Cerrar"
+            >
+              <X size={16} weight="bold" />
+            </button>
+          </div>
+        )}
 
         {/* Main content grid */}
         <div className="space-y-8">
