@@ -145,21 +145,6 @@ function AppContent() {
   const [selectedYear, setSelectedYear] = useLocalStorage('budgetrp_ui_selectedYear', null);
   const [selectedMonth, setSelectedMonth] = useLocalStorage('budgetrp_ui_selectedMonth', null);
 
-  const availableYears = useMemo(() =>
-    getAvailableYears(incomes, expenses),
-  [incomes, expenses]);
-
-  // Meses con transacciones para el año seleccionado
-  const availableMonths = useMemo(() => {
-    if (!selectedYear) return [];
-    const months = new Set();
-    [...incomes, ...expenses].forEach(t => {
-      if (!t.date) return;
-      const d = new Date(t.date + 'T12:00:00');
-      if (d.getFullYear() === selectedYear) months.add(d.getMonth());
-    });
-    return [...months].sort((a, b) => a - b);
-  }, [incomes, expenses, selectedYear]);
 
   const filteredIncomes = useMemo(() => {
     const byYear = filterByYear(incomes, selectedYear);
