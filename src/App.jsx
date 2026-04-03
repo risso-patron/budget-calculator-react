@@ -124,18 +124,35 @@ function AppContent() {
   // ── Tabs y filtro de período persistentes (Fase UX 1) ───────────────────
   const [activeTab, setActiveTab] = useLocalStorage('budgetrp_ui_activeTab', 'resumen');
   const [selectedYear, setSelectedYear] = useLocalStorage('budgetrp_ui_selectedYear', null);
+  const [selectedMonth, setSelectedMonth] = useLocalStorage('budgetrp_ui_selectedMonth', null);
 
-  const availableYears = useMemo(() => 
-    getAvailableYears(incomes, expenses), 
+  const availableYears = useMemo(() =>
+    getAvailableYears(incomes, expenses),
   [incomes, expenses]);
 
-  const filteredIncomes = useMemo(() => 
-    filterByYear(incomes, selectedYear), 
-  [incomes, selectedYear]);
+  // Meses con transacciones para el año seleccionado
+  const availableMonths = useMemo(() => {
+    if (!selectedYear) return [];
+    const months = new Set();
+    [...incomes, ...expenses].forEach(t => {
+      if (!t.date) return;
+      const d = new Date(t.date + 'T12:00:00');
+      if (d.getFullYear() === selectedYear) months.add(d.getMonth());
+    });
+    return [...months].sort((a, b) => a - b);
+  }, [incomes, expenses, selectedYear]);
 
-  const filteredExpenses = useMemo(() => 
-    filterByYear(expenses, selectedYear), 
-  [expenses, selectedYear]);
+  const filteredIncomes = useMemo(() => {
+    const byYear = filterByYear(incomes, selectedYear);
+    if (selectedYear && selectedMonth !== null) return filterByMonth(byYear, selectedYear, selectedMonth);
+    return byYear;
+  }, [incomes, selectedYear, selectedMonth]);
+
+  const filteredExpenses = useMemo(() => {
+    const byYear = filterByYear(expenses, selectedYear);
+    if (selectedYear && selectedMonth !== null) return filterByMonth(byYear, selectedYear, selectedMonth);
+    return byYear;
+  }, [expenses, selectedYear, selectedMonth]);
 
   const filteredTotalIncome   = useMemo(() => calculateTotal(filteredIncomes), [filteredIncomes]);
   const filteredTotalExpenses = useMemo(() => calculateTotal(filteredExpenses), [filteredExpenses]);
@@ -456,32 +473,64 @@ function AppContent() {
               ))}
             </div>
 
-            {/* Selector de año Pastel */}
+            {/* Selector de año + mes */}
             {availableYears.length > 0 && (
-              <div className="flex gap-1.5 bg-slate-100/50 dark:bg-slate-800/80 p-1 rounded-2xl">
-                <button
-                  onClick={() => setSelectedYear(null)}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${
-                    selectedYear === null
-                      ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-premium'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-primary-600'
-                  }`}
-                >
-                  Todo
-                </button>
-                {availableYears.map(year => (
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Pill de años */}
+                <div className="flex gap-1.5 bg-slate-100/50 dark:bg-slate-800/80 p-1 rounded-2xl">
                   <button
-                    key={year}
-                    onClick={() => setSelectedYear(year)}
+                    onClick={() => { setSelectedYear(null); setSelectedMonth(null); }}
                     className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${
-                      selectedYear === year
+                      selectedYear === null
                         ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-premium'
                         : 'text-slate-500 dark:text-slate-400 hover:text-primary-600'
                     }`}
                   >
-                    {year}
+                    Todo
                   </button>
-                ))}
+                  {availableYears.map(year => (
+                    <button
+                      key={year}
+                      onClick={() => { setSelectedYear(year); setSelectedMonth(null); }}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${
+                        selectedYear === year
+                          ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-premium'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-primary-600'
+                      }`}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Selector de mes — solo visible cuando hay año seleccionado */}
+                {selectedYear && availableMonths.length > 0 && (
+                  <div className="flex gap-1.5 bg-slate-100/50 dark:bg-slate-800/80 p-1 rounded-2xl">
+                    <button
+                      onClick={() => setSelectedMonth(null)}
+                      className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${
+                        selectedMonth === null
+                          ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-premium'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-primary-600'
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    {availableMonths.map(month => (
+                      <button
+                        key={month}
+                        onClick={() => setSelectedMonth(month)}
+                        className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${
+                          selectedMonth === month
+                            ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-premium'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-primary-600'
+                        }`}
+                      >
+                        {new Date(2000, month).toLocaleString('es', { month: 'short' })}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
