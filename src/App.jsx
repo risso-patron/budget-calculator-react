@@ -59,6 +59,7 @@ import { RecurringManager } from './features/recurring/RecurringManager'
 import { CurrencyProvider } from './contexts/CurrencyContext'
 import { CurrencySelector } from './features/currency/CurrencySelector'
 import { InstallPWA } from './components/InstallPWA';
+import { AppFooter } from './components/Shared/AppFooter';
 
 /**
  * Componente principal de la aplicación con autenticación
@@ -716,25 +717,7 @@ function AppContent() {
         {/* Banner de instalación PWA si el navegador lo permite */}
         <InstallPWA />
 
-        {/* Footer */}
-        <footer className="mt-12 text-center text-slate-500 dark:text-slate-400 text-sm">
-          <p>
-            © 2025 Budget Calculator | Desarrollado por{' '}
-            <a 
-              href="https://www.linkedin.com/in/jorge-luis-risso-/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary-600 dark:text-primary-400 hover:text-primary-500 transition-colors underline font-bold"
-            >
-              R P
-            </a>
-          </p>
-          <p className="mt-2 text-xs opacity-70">
-            <a href="/privacy.html" className="hover:text-primary-600 transition-colors">Política de Privacidad</a>
-            {' · '}
-            <a href="/terms.html" className="hover:text-primary-600 transition-colors">Términos de Servicio</a>
-          </p>
-        </footer>
+        <AppFooter />
       </div>
     </div>
   );

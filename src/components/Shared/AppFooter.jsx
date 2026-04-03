@@ -1,0 +1,53 @@
+import { Coffee } from '@phosphor-icons/react';
+import BudgetLogo from './BudgetLogo';
+
+export const AppFooter = () => (
+  <footer className="mt-12 border-t border-slate-200 dark:border-slate-800 py-10 px-6 text-center text-sm text-slate-500 dark:text-slate-400">
+    <div className="max-w-4xl mx-auto flex flex-col items-center justify-center gap-5">
+
+      {/* Logo + nombre */}
+      <div className="flex items-center gap-2">
+        <BudgetLogo size={22} />
+        <span className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
+          Budget Calculator
+        </span>
+      </div>
+
+      {/* Subtítulo + autor */}
+      <div className="flex flex-col md:flex-row items-center gap-2 md:gap-7 font-medium">
+        <span>Gestión Inteligente de Finanzas Personales</span>
+        <span className="hidden md:inline-block w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
+        <span className="flex items-center gap-1.5">
+          Hecho con{' '}
+          <Coffee size={15} weight="fill" className="text-amber-400" />
+          {' '}por{' '}
+          <a
+            href="https://www.linkedin.com/in/jorge-luis-risso-/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors uppercase tracking-tight"
+          >
+            Luis Risso Patrón
+          </a>
+        </span>
+      </div>
+
+      {/* Cita */}
+      <p className="text-xs text-slate-400 dark:text-slate-500 italic max-w-sm leading-relaxed">
+        &ldquo;La construí porque yo también quería entender a dónde iba mi plata cada mes.&rdquo;
+      </p>
+
+      {/* Links legales */}
+      <p className="text-xs opacity-60">
+        <a href="/privacy.html" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+          Política de Privacidad
+        </a>
+        {' · '}
+        <a href="/terms.html" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+          Términos de Servicio
+        </a>
+      </p>
+
+    </div>
+  </footer>
+);
