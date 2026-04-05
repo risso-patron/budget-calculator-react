@@ -51,9 +51,9 @@ export const useRecurring = (addIncome, addExpense) => {
       let nextDue = rule.nextDue;
       while (nextDue <= today) {
         if (rule.type === 'income') {
-          addIncome(rule.description, rule.amount, nextDue);
+          addIncome(rule.description, rule.amount, nextDue, rule.currency || 'USD');
         } else {
-          addExpense(rule.description, rule.category, rule.amount, nextDue);
+          addExpense(rule.description, rule.category, rule.amount, nextDue, rule.currency || 'USD');
         }
         nextDue = getNextDue(rule.frequency, nextDue);
         needsUpdate = true;

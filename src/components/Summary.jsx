@@ -12,50 +12,34 @@ import { formatCurrency } from '../utils/formatters';
 import { calculatePercentage } from '../utils/currencyHelpers';
 import { STRATEGIC_MESSAGES } from '../constants/categories';
 
-/**
- * Calcula el delta porcentual entre valor actual y anterior.
- * Devuelve null cuando no hay datos del mes anterior.
- */
 function calcDelta(current, previous) {
   if (previous === 0) return null;
   return Math.round(((current - previous) / Math.abs(previous)) * 100);
 }
 
-/**
- * Badge de delta con ícono, color semántico y porcentaje.
- * inverseColor=true cuando "subir" es malo (gastos).
- */
 function DeltaBadge({ current, previous, inverseColor = false }) {
   const delta = calcDelta(current, previous);
-
   if (delta === null) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-400 dark:text-slate-500">
-        <Minus size={10} weight="bold" />
-        sin datos previos
+      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-slate-400 dark:text-slate-500">
+        <Minus size={9} weight="bold" />sin datos
       </span>
     );
   }
-
-  const isUp   = delta > 0;
+  const isUp = delta > 0;
   const isNeutral = delta === 0;
-
-  // Para ingresos/balance: subir = bueno (verde). Para gastos: subir = malo (rojo).
   const positive = inverseColor ? !isUp : isUp;
-
   const colorClass = isNeutral
     ? 'text-slate-400 dark:text-slate-500'
     : positive
       ? 'text-emerald-500 dark:text-emerald-400'
       : 'text-rose-500 dark:text-rose-400';
-
   const Icon = isNeutral ? Minus : isUp ? TrendUp : TrendDown;
-
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold ${colorClass}`}>
-      <Icon size={11} weight="bold" />
+    <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold ${colorClass}`}>
+      <Icon size={10} weight="bold" />
       {isNeutral ? 'igual' : `${isUp ? '+' : ''}${delta}%`}
-      <span className="text-slate-400 dark:text-slate-500 font-normal">vs mes ant.</span>
+      <span className="text-slate-400 dark:text-slate-500 font-normal"> vs ant.</span>
     </span>
   );
 }
@@ -66,9 +50,6 @@ DeltaBadge.propTypes = {
   inverseColor: PropTypes.bool,
 };
 
-/**
- * Componente Summary - Panel de estadísticas Pastel Premium
- */
 export const Summary = ({ 
   totalIncome = 0, 
   totalExpenses = 0, 
@@ -82,7 +63,6 @@ export const Summary = ({
   const savingsRate = totalIncome > 0 ? calculatePercentage(Math.max(0, balance - creditCardDebt), totalIncome) : 0;
   const isPositive = (balance - creditCardDebt) >= 0;
 
-  // Lógica de Insignia de Salud Financiera
   const getHealthBadge = (rate) => {
     if (rate >= 30) return STRATEGIC_MESSAGES.BADGES.PRO;
     if (rate >= 15) return STRATEGIC_MESSAGES.BADGES.SOLID;
@@ -93,117 +73,97 @@ export const Summary = ({
 
   const stats = [
     {
-      label: 'Ingresos Totales',
+      label: 'Ingresos',
       value: totalIncome,
       prevValue: prevTotalIncome,
       inverseColor: false,
-      icon: <HandCoins size={22} weight="light" className="text-emerald-500" />,
+      icon: <HandCoins size={18} weight="fill" className="text-emerald-500" />,
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-50 dark:bg-emerald-950/40',
       iconBg: 'bg-emerald-500/10',
       iconBorder: 'border-emerald-500/20',
       barColor: 'bg-emerald-500',
-      tooltip: 'Suma de todas tus fuentes de ingresos.'
     },
     {
-      label: 'Gastos + Deudas',
+      label: 'Egresos',
       value: totalOut,
       prevValue: prevTotalExpenses,
       inverseColor: true,
-      icon: <CreditCard size={22} weight="light" className="text-rose-500" />,
+      icon: <CreditCard size={18} weight="fill" className="text-rose-500" />,
       color: 'text-rose-500',
       bgColor: 'bg-rose-50 dark:bg-rose-950/40',
       iconBg: 'bg-rose-500/10',
       iconBorder: 'border-rose-500/20',
       barColor: 'bg-rose-500',
-      tooltip: 'Tus deudas y consumos actuales.'
     },
     {
-      label: 'Balance Neto',
+      label: 'Balance',
       value: balance - creditCardDebt,
       prevValue: prevBalance,
       inverseColor: false,
       icon: isPositive
-        ? <TrendUp size={22} weight="light" className="text-primary-500" />
-        : <TrendDown size={22} weight="light" className="text-rose-500" />,
+        ? <TrendUp size={18} weight="fill" className="text-primary-500" />
+        : <TrendDown size={18} weight="fill" className="text-rose-500" />,
       color: isPositive ? 'text-primary-500' : 'text-rose-500',
       bgColor: isPositive ? 'bg-primary-50 dark:bg-primary-950/40' : 'bg-rose-50 dark:bg-rose-950/40',
       iconBg: isPositive ? 'bg-primary-500/10' : 'bg-rose-500/10',
       iconBorder: isPositive ? 'border-primary-500/20' : 'border-rose-500/20',
       barColor: isPositive ? 'bg-primary-500' : 'bg-rose-500',
-      tooltip: STRATEGIC_MESSAGES.DEFINITIONS.BALANCE
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {stats.map((stat, index) => (
-        <Card key={index} padding="p-5" className="group" title={stat.tooltip}>
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-start">
-              <div className={`w-12 h-12 rounded-2xl ${stat.iconBg} ${stat.iconBorder} border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500`}>
+    <div className="space-y-3">
+      {/* TARJETAS COMPACTAS - 3 columnas en móvil */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        {stats.map((stat, index) => (
+          <div key={index} className="bg-white dark:bg-slate-800/60 rounded-2xl p-3 sm:p-5 border border-slate-100 dark:border-white/5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-xl ${stat.iconBg} ${stat.iconBorder} border flex items-center justify-center shrink-0`}>
                 {stat.icon}
               </div>
-              <div className="text-right">
-                <p className="text-[10px] uppercase font-heavy tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                  {stat.label}
-                </p>
-                <p className={`text-2xl font-black ${stat.color} tracking-tight`}>
-                  {formatCurrency(stat.value)}
-                </p>
-              </div>
+              <span className={`text-xs sm:text-[10px] font-black uppercase tracking-tight text-right leading-tight ${stat.color}`}>
+                {stat.label}
+              </span>
             </div>
-            {/* Delta vs mes anterior */}
-            <div className="flex items-center justify-between">
-              <DeltaBadge
-                current={stat.value}
-                previous={stat.prevValue}
-                inverseColor={stat.inverseColor}
-              />
-              <div className={`h-1 w-1/2 rounded-full ${stat.bgColor} overflow-hidden`}>
-                <div className={`h-full ${stat.barColor} opacity-20 w-3/4 animate-pulse`} />
-              </div>
-            </div>
+            <p className={`text-base sm:text-2xl font-black ${stat.color} tracking-tight leading-none mb-1 truncate`}>
+              {formatCurrency(stat.value)}
+            </p>
+            <DeltaBadge current={stat.value} previous={stat.prevValue} inverseColor={stat.inverseColor} />
           </div>
-        </Card>
-      ))}
+        ))}
+      </div>
 
-      {/* Indicador de Salud Financiera (Savings Rate) */}
-      <Card className="md:col-span-3 overflow-hidden" padding="p-0">
-        <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-              <ChartPieSlice size={28} weight="light" className="text-indigo-500" />
+      {/* INDICADOR DE SALUD — Ultra compacto en móvil */}
+      <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+              <ChartPieSlice size={16} weight="fill" className="text-indigo-500" />
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="text-lg font-bold text-slate-800 dark:text-white leading-none">Capacidad de Ahorro</h4>
-                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${healthBadge.color} ${healthBadge.bgColor} border border-current/10`}>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-xs font-black text-slate-800 dark:text-white">Capacidad de Ahorro</p>
+                <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase ${healthBadge.color} ${healthBadge.bgColor}`}>
                   {healthBadge.label}
                 </span>
               </div>
-              <p className="text-sm text-slate-400 font-medium">{STRATEGIC_MESSAGES.DEFINITIONS.SAVINGS_RATE}</p>
+              <p className="text-[10px] text-slate-400 hidden sm:block">{STRATEGIC_MESSAGES.DEFINITIONS.SAVINGS_RATE}</p>
             </div>
           </div>
-          
-          <div className="flex flex-col items-center md:items-end gap-1">
-            <span className={`text-4xl font-black ${isPositive ? 'text-indigo-500' : 'text-rose-500'} tracking-tighter`}>
-              {savingsRate}%
-            </span>
-            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Ratio Mensual</span>
-          </div>
+          <span className={`text-2xl sm:text-3xl font-black ${isPositive ? 'text-indigo-500' : 'text-rose-500'} tracking-tighter shrink-0`}>
+            {savingsRate}%
+          </span>
         </div>
-        
-        {/* Barra de Progreso Pastel */}
-        <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800">
-          <div 
-            className={`h-full transition-all duration-1000 ease-out shadow-lg ${
+        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700">
+          <div
+            className={`h-full transition-all duration-1000 ease-out ${
               savingsRate > 20 ? 'bg-indigo-500' : savingsRate > 0 ? 'bg-amber-400' : 'bg-rose-400'
             }`}
             style={{ width: `${Math.min(Math.max(0, savingsRate), 100)}%` }}
           />
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

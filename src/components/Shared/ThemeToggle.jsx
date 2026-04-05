@@ -11,7 +11,7 @@ export const ThemeToggle = () => {
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={(e) => { e.stopPropagation(); toggleTheme(); }}
       className="relative w-14 h-7 rounded-full p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
       style={{
         backgroundColor: isDark ? '#4b5563' : '#e5e7eb',

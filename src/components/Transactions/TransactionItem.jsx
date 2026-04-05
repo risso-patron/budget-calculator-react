@@ -3,17 +3,22 @@ import PropTypes from 'prop-types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { EXPENSE_CATEGORIES } from '../../constants/categories';
 import { EditTransactionModal } from './EditTransactionModal';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 /**
  * Componente TransactionItem - Item individual con edición
  */
-export const TransactionItem = ({ transaction, type, onRemove, onEdit, index }) => {
+export const TransactionItem = ({ transaction, type, onRemove, onEdit, index, isSelected = false, onToggleSelect }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { convertCurrency, selectedCurrency } = useCurrency();
 
   const isIncome = type === 'income';
   const category = EXPENSE_CATEGORIES.find(cat => cat.value === transaction.category);
   const icon = isIncome ? '💰' : (category?.icon || '💳');
+  
+  const txCurrency = transaction.currency || 'USD';
+  const hasDifferentCurrency = txCurrency !== selectedCurrency;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -46,8 +51,18 @@ export const TransactionItem = ({ transaction, type, onRemove, onEdit, index }) 
         }}
       >
         <div className="flex items-start justify-between gap-3">
-          {/* Icono y contenido */}
+          {/* Checkbox + Icono y contenido */}
           <div className="flex items-start gap-3 flex-1 min-w-0">
+            {onToggleSelect && (
+              <div className="pt-1 flex-shrink-0">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => onToggleSelect(transaction.id, e.target.checked)}
+                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 dark:bg-gray-800 transition-all cursor-pointer shadow-sm hover:scale-110"
+                />
+              </div>
+            )}
             <span className="text-2xl flex-shrink-0" aria-hidden="true">
               {icon}
             </span>
@@ -74,11 +89,16 @@ export const TransactionItem = ({ transaction, type, onRemove, onEdit, index }) 
           {/* Monto y acciones */}
           <div className="flex flex-col items-end gap-2">
             <div 
-              className={`text-lg font-bold ${
+              className={`text-lg font-bold flex flex-col items-end ${
                 isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}
             >
-              {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
+              <span>{isIncome ? '+' : '-'}{formatCurrency(transaction.amount, txCurrency)}</span>
+              {hasDifferentCurrency && (
+                <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 line-clamp-1 leading-none mt-0.5">
+                  (≈ {formatCurrency(convertCurrency(transaction.amount, txCurrency, selectedCurrency), selectedCurrency)})
+                </span>
+              )}
             </div>
             
             {/* Botones de acción */}

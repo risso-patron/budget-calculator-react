@@ -40,55 +40,42 @@ export const GlobalBudgetTracker = ({ totalExpenses }) => {
   };
 
   return (
-    <div className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl shadow-xl w-full text-white">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 px-4 py-3 sm:p-6 rounded-2xl shadow-xl w-full text-white">
+      <div className="flex justify-between items-center gap-3 mb-3">
         
         {/* Cabecera y Título */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
-            <Target size={24} weight="light" className="text-purple-500" />
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
+            <Target size={18} weight="fill" className="text-purple-400" />
           </div>
           <div>
-            <h3 className="font-bold text-lg leading-tight">Presupuesto Mensual</h3>
-            <p className="text-sm text-gray-400">{getAlertText()}</p>
+            <h3 className="font-black text-sm leading-tight">Presupuesto Mensual</h3>
+            <p className="text-[10px] text-gray-400 font-medium">{getAlertText()}</p>
           </div>
         </div>
 
         {/* Input Interactive */}
-        <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-slate-600/50">
+        <div className="flex items-center gap-1.5 bg-slate-900/50 px-2 py-1 rounded-xl border border-slate-600/50">
           {isEditing ? (
             <>
               <input
-                type="number"
-                min="0"
-                step="100"
-                autoFocus
-                className="bg-transparent border-none outline-none text-right font-mono font-bold w-24 px-2 
-                           text-purple-300 placeholder-slate-500 appearance-none m-0"
+                type="number" min="0" step="100" autoFocus
+                className="bg-transparent border-none outline-none text-right font-mono font-black w-20 text-sm text-purple-300 appearance-none m-0"
                 value={tempValue}
                 onChange={(e) => setTempValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               />
-              <button 
-                onClick={handleSave}
-                className="p-1.5 bg-green-500 hover:bg-green-400 rounded-lg transition-colors"
-                aria-label="Guardar límite de presupuesto"
-              >
-                <CheckCircle size={18} weight="bold" className="text-slate-900" />
+              <button onClick={handleSave} className="p-1 bg-green-500 hover:bg-green-400 rounded-lg transition-colors">
+                <CheckCircle size={14} weight="bold" className="text-slate-900" />
               </button>
             </>
           ) : (
             <>
-              <span className="font-mono font-bold text-lg px-3 py-1 cursor-pointer hover:text-purple-300 transition-colors" 
-                    onClick={() => setIsEditing(true)}>
+              <span className="font-mono font-black text-sm px-1 py-0.5 cursor-pointer hover:text-purple-300 transition-colors whitespace-nowrap" onClick={() => setIsEditing(true)}>
                 {formatCurrency(safeBudget)}
               </span>
-              <button 
-                onClick={() => setIsEditing(true)}
-                className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
-                aria-label="Editar límite de presupuesto"
-              >
-                <PencilSimple size={18} />
+              <button onClick={() => setIsEditing(true)} className="p-1 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white">
+                <PencilSimple size={14} />
               </button>
             </>
           )}
@@ -96,16 +83,13 @@ export const GlobalBudgetTracker = ({ totalExpenses }) => {
       </div>
 
       {/* Barra de Progreso Dinámica */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm font-semibold">
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-[11px] font-bold">
           <span className="text-gray-300">Usado: {formatCurrency(totalExpenses)}</span>
-          <span className={percentage >= 90 ? 'text-red-400' : 'text-gray-400'}>
-            {percentage}%
-          </span>
+          <span className={percentage >= 90 ? 'text-red-400' : 'text-gray-400'}>{percentage}%</span>
         </div>
-        
-        <div className="relative h-4 bg-slate-900 rounded-full overflow-hidden border border-slate-700/50 shadow-inner">
-          <div 
+        <div className="relative h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
+          <div
             className={`absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out shadow-lg ${getProgressColor()}`}
             style={{ width: `${percentage}%` }}
           />

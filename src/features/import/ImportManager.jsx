@@ -877,32 +877,32 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Importar Transacciones
-        </h3>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-black text-gray-900 dark:text-white">Importar Transacciones</h3>
         <button
           onClick={downloadTemplate}
-          className="text-sm px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+          className="text-xs px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 transition-colors font-bold"
         >
-          Descargar Plantilla CSV
+          Plantilla CSV
         </button>
       </div>
 
-      {/* Instrucciones */}
-      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-        <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-          Formatos de archivo aceptados:
-        </h4>
-        <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
-          <li>• <strong>Extracto bancario</strong>: sube el CSV directo de tu banco — se detectan las columnas automáticamente</li>
-          <li>• <strong>Plantilla propia</strong>: columnas <code className="bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded">tipo, descripcion, monto, fecha, categoria</code></li>
-          <li>• Separador: coma <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">,</code> o punto y coma <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">;</code> (detectados automáticamente)</li>
-          <li>• Fecha: YYYY-MM-DD, DD/MM/YYYY o formato Excel (4-Dec-25)</li>
-          <li>• <strong>IMPORTANTE</strong>: Guarda como “CSV UTF-8 (delimitado por comas)” desde Excel</li>
-        </ul>
-      </div>
+      {/* Instrucciones colapsables */}
+      <details className="mb-3 group">
+        <summary className="flex items-center justify-between cursor-pointer px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-widest list-none select-none">
+          <span>ℹ️ Formatos aceptados y ayuda</span>
+          <span className="group-open:rotate-180 transition-transform text-sm">▾</span>
+        </summary>
+        <div className="mt-1.5 px-3 py-2 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800 text-[10px] text-blue-800 dark:text-blue-400 space-y-1">
+          <p>• <strong>Extracto bancario:</strong> CSV directo del banco — columnas auto-detectadas.</p>
+          <p>• <strong>Plantilla propia:</strong> <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">tipo, descripcion, monto, fecha, categoria</code></p>
+          <p>• Separador: coma o punto y coma (auto-detectado).</p>
+          <p>• Fecha: YYYY-MM-DD, DD/MM/YYYY o Excel (4-Dec-25).</p>
+          <p>• <strong>IMPORTANTE:</strong> Guardar como «CSV UTF-8» desde Excel.</p>
+        </div>
+      </details>
+
 
       {/* Mapeador manual de columnas */}
       {showColumnMapper && rawCSVMeta && (
@@ -1008,41 +1008,32 @@ gasto,Amazon,75.99,2025-11-30,Compras`;
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={`
-              relative group cursor-pointer transition-all duration-500 rounded-[2.5rem] border-4 border-dashed
-              flex flex-col items-center justify-center p-10 text-center
+              relative group cursor-pointer transition-all duration-300 rounded-2xl border-2 border-dashed
+              flex flex-col items-center justify-center p-6 text-center
               ${isDragging 
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30 scale-[1.02] shadow-2xl shadow-primary-500/10' 
-                : 'border-slate-100 dark:border-slate-800 hover:border-primary-300 dark:hover:border-primary-700 bg-slate-50/30 dark:bg-slate-900/20'
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30 scale-[1.02]' 
+                : 'border-slate-200 dark:border-slate-700 hover:border-primary-300 bg-slate-50/50 dark:bg-slate-900/20'
               }
             `}
             onClick={() => document.getElementById('file-upload').click()}
           >
-            <div className={`
-              w-16 h-16 rounded-3xl mb-4 flex items-center justify-center transition-all duration-500
-              ${isDragging 
-                ? 'bg-primary-500 text-white rotate-12 scale-110 shadow-lg shadow-primary-500/30' 
-                : 'bg-white dark:bg-slate-800 text-primary-500 shadow-xl'
-              }
-            `}>
+            <div className={`w-12 h-12 rounded-2xl mb-3 flex items-center justify-center transition-all duration-300 ${
+              isDragging ? 'bg-primary-500 text-white scale-110' : 'bg-white dark:bg-slate-800 text-primary-500 shadow-lg'
+            }`}>
               {isDragging ? (
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                 </svg>
               ) : (
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               )}
             </div>
-
-            <div className="space-y-1">
-              <p className="text-xl font-black text-slate-800 dark:text-white">
-                {isDragging ? '¡Suéltalo ahora!' : 'Arrastra tu archivo aquí'}
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                o haz clic para buscar en tu dispositivo
-              </p>
-            </div>
+            <p className="text-sm font-black text-slate-800 dark:text-white">
+              {isDragging ? '¡Suéltalo aquí!' : 'Arrastra el archivo o haz clic'}
+            </p>
+            <p className="text-[10px] text-slate-400 font-medium mt-0.5">Archivos .csv o .txt</p>
 
             <input
               id="file-upload"
