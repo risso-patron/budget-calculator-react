@@ -1,4 +1,4 @@
-import { Coffee } from '@phosphor-icons/react';
+import { Coffee, ShieldCheck } from '@phosphor-icons/react';
 import BudgetLogo from './BudgetLogo';
 
 export const AppFooter = () => (
@@ -37,8 +37,19 @@ export const AppFooter = () => (
         &ldquo;La construí porque yo también quería entender a dónde iba mi plata cada mes.&rdquo;
       </p>
 
+      {/* Shield de Privacidad Local-First */}
+      <div className="flex flex-col items-center gap-1.5 mt-2 p-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 max-w-sm w-full mx-auto shadow-sm">
+        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+          <ShieldCheck size={20} weight="fill" />
+          <span className="font-bold text-sm tracking-tight uppercase">Privacidad Absoluta</span>
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-snug">
+          Tus datos bancarios viven encriptados 100% en tu dispositivo. Nada sale a la nube.
+        </p>
+      </div>
+
       {/* Links legales */}
-      <p className="text-xs opacity-60">
+      <p className="text-xs opacity-60 mt-2">
         <a href="/privacy.html" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
           Política de Privacidad
         </a>
