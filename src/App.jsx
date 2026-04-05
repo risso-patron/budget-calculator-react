@@ -39,6 +39,7 @@ import { IncomeExpenseBarChart } from './components/Charts/ChartJS/IncomeExpense
 import { GlobalBudgetTracker } from './components/Budget/GlobalBudgetTracker';
 // FASE UX 5: Notificaciones / Recordatorios
 import { DailyReminder } from './components/Notifications/DailyReminder';
+import { DailyOnboardingToast } from './components/Notifications/DailyOnboardingToast';
 // FEATURES PREMIUM
 import { GoalManager } from './features/goals/GoalManager';
 import { ExportManager } from './features/export/ExportManager';
@@ -549,6 +550,8 @@ function AppContent() {
         {/* Main content grid */}
         <div className="space-y-4 sm:space-y-8">
           
+          {/* Notificaciones In-App Reactivas */}
+          <DailyOnboardingToast />
           <DailyReminder />
 
           {/* ── TAB: RESUMEN ──────────────────────────────────────────────── */}
