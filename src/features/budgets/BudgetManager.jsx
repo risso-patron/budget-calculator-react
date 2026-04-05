@@ -13,6 +13,14 @@ export function BudgetManager({ expenses }) {
   const [budgets, setBudgets] = useLocalStorage(BUDGETS_KEY, {})
   const [editingCategory, setEditingCategory] = useState(null)
   const [inputValue, setInputValue] = useState('')
+  const [inputNote, setInputNote] = useState('')
+
+  const getBudgetData = (catValue) => {
+    const data = budgets[catValue]
+    if (typeof data === 'number') return { limit: data, note: '' }
+    if (data && typeof data === 'object') return data
+    return null
+  }
 
   // Gastos del mes actual por categoría
   const currentMonthSpending = useMemo(() => {
@@ -41,9 +49,10 @@ export function BudgetManager({ expenses }) {
   const handleSaveBudget = (category) => {
     const val = parseFloat(inputValue)
     if (isNaN(val) || val <= 0) return
-    setBudgets(prev => ({ ...prev, [category]: val }))
+    setBudgets(prev => ({ ...prev, [category]: { limit: val, note: inputNote.trim() } }))
     setEditingCategory(null)
     setInputValue('')
+    setInputNote('')
   }
 
   const handleRemoveBudget = (category) => {
@@ -56,7 +65,9 @@ export function BudgetManager({ expenses }) {
 
   const startEdit = (category) => {
     setEditingCategory(category)
-    setInputValue(budgets[category]?.toString() || '')
+    const data = getBudgetData(category)
+    setInputValue(data?.limit?.toString() || '')
+    setInputNote(data?.note || '')
   }
 
   const getBarColor = (pct) => {
@@ -93,7 +104,9 @@ export function BudgetManager({ expenses }) {
         <div className="space-y-4 mb-6">
           {activeCategories.map(cat => {
             const spent = currentMonthSpending[cat.value] || 0
-            const limit = budgets[cat.value]
+            const data = getBudgetData(cat.value)
+            const limit = data?.limit
+            const note = data?.note
             const pct = limit ? Math.min((spent / limit) * 100, 100) : null
             const isEditing = editingCategory === cat.value
 
@@ -106,9 +119,12 @@ export function BudgetManager({ expenses }) {
               >
                 {/* Fila superior: categoría + montos */}
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                    <span className="text-lg">{cat.icon}</span>
-                    {cat.label}
+                  <span className="font-medium text-gray-700 dark:text-gray-200 flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{cat.icon}</span>
+                      {cat.label}
+                    </div>
+                    {note && <span className="text-[10px] text-gray-500 dark:text-gray-400 font-normal ml-7 italic">{note}</span>}
                   </span>
                   <div className="flex items-center gap-3">
                     {limit ? (
@@ -161,31 +177,40 @@ export function BudgetManager({ expenses }) {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="mt-3 flex gap-2"
+                      className="mt-3 flex flex-col gap-2"
                     >
                       <input
-                        type="number"
-                        min="1"
-                        step="0.01"
-                        value={inputValue}
-                        onChange={e => setInputValue(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleSaveBudget(cat.value) }}
-                        placeholder="Límite mensual ($)"
-                        autoFocus
-                        className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        type="text"
+                        value={inputNote}
+                        onChange={e => setInputNote(e.target.value)}
+                        placeholder="Especificar alcance (Ej: Netflix, Gym..)"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-500 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       />
-                      <button
-                        onClick={() => handleSaveBudget(cat.value)}
-                        className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-lg font-medium"
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        onClick={() => setEditingCategory(null)}
-                        className="px-3 py-1.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 text-gray-700 dark:text-white text-sm rounded-lg"
-                      >
-                        ✕
-                      </button>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          value={inputValue}
+                          onChange={e => setInputValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleSaveBudget(cat.value) }}
+                          placeholder="Límite mensual ($)"
+                          autoFocus
+                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        />
+                        <button
+                          onClick={() => handleSaveBudget(cat.value)}
+                          className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-lg font-medium"
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          onClick={() => setEditingCategory(null)}
+                          className="px-3 py-1.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 text-gray-700 dark:text-white text-sm rounded-lg"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -223,34 +248,45 @@ export function BudgetManager({ expenses }) {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full mt-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-3 flex gap-2 items-center"
+                className="w-full mt-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-3 flex flex-col gap-2"
               >
-                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300 flex-shrink-0">
-                  {EXPENSE_CATEGORIES.find(c => c.value === editingCategory)?.icon} {editingCategory}:
-                </span>
+                <div className="text-sm font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1 mb-1">
+                  {EXPENSE_CATEGORIES.find(c => c.value === editingCategory)?.icon} {editingCategory}
+                </div>
+                
                 <input
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  value={inputValue}
-                  onChange={e => setInputValue(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSaveBudget(editingCategory) }}
-                  placeholder="Límite mensual ($)"
-                  autoFocus
-                  className="flex-1 px-3 py-1.5 text-sm border border-indigo-200 dark:border-indigo-700 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  type="text"
+                  value={inputNote}
+                  onChange={e => setInputNote(e.target.value)}
+                  placeholder="Especificar (Ej: Salidas, Apps..)"
+                  className="w-full px-3 py-1.5 text-xs border border-indigo-200 dark:border-indigo-700 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
-                <button
-                  onClick={() => handleSaveBudget(editingCategory)}
-                  className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-lg font-medium"
-                >
-                  Guardar
-                </button>
-                <button
-                  onClick={() => setEditingCategory(null)}
-                  className="px-3 py-1.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 text-gray-700 dark:text-white text-sm rounded-lg"
-                >
-                  ✕
-                </button>
+
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    value={inputValue}
+                    onChange={e => setInputValue(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSaveBudget(editingCategory) }}
+                    placeholder="Límite mensual ($)"
+                    autoFocus
+                    className="flex-1 px-3 py-1.5 text-sm border border-indigo-200 dark:border-indigo-700 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                  <button
+                    onClick={() => handleSaveBudget(editingCategory)}
+                    className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-lg font-medium"
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    onClick={() => setEditingCategory(null)}
+                    className="px-3 py-1.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 text-gray-700 dark:text-white text-sm rounded-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

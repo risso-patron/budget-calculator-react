@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
     description TEXT NOT NULL,
     amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
     category TEXT,
+    currency TEXT DEFAULT 'USD',
     type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

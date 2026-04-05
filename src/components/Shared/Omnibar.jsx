@@ -1,0 +1,222 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  MagnifyingGlass, 
+  Keyboard, 
+  Target, 
+  Robot, 
+  Receipt,
+  ArrowUp,
+  ArrowDown,
+  X
+} from '@phosphor-icons/react';
+import { formatCurrency, formatDate } from '../../utils/formatters';
+
+export const Omnibar = ({ isOpen, onClose, allTransactions = [], onNavigate }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef(null);
+
+  // Focus and clear input when opened
+  useEffect(() => {
+    if (isOpen) {
+      setSearchTerm('');
+      setTimeout(() => inputRef.current?.focus(), 100);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
+
+  // Cerrar presionando escape o click fuera
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Atajos maestros a la nube
+  const quickActions = [
+    { id: 'movimientos', label: 'Ver Movimientos', icon: Receipt, query: 'movimientos' },
+    { id: 'planificacion', label: 'Mis Metas', icon: Target, query: 'metas' },
+    { id: 'resumen', label: 'Consultar IA', icon: Robot, query: 'ia, chat' },
+  ];
+
+  // Motor de Búsqueda Fuzz (Básico)
+  const isQuerying = searchTerm.trim().length > 0;
+  
+  const searchResults = isQuerying ? allTransactions.filter(tx => 
+    tx.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (tx.category && tx.category.toLowerCase().includes(searchTerm.toLowerCase()))
+  ).slice(0, 5) : []; // Max 5 matches
+
+  const actionResults = isQuerying ? quickActions.filter(qa => 
+    qa.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    qa.query.includes(searchTerm.toLowerCase())
+  ) : quickActions;
+
+  // Lógica interactiva con fechas arriba abajo
+  const totalItemsCount = searchResults.length + actionResults.length;
+
+  // Prevent default arrow scrolling and handle it locally
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < totalItemsCount - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : totalItemsCount - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      // Ejecutar la acción del indíce
+      if (selectedIndex < actionResults.length) {
+        onNavigate(actionResults[selectedIndex].id);
+        onClose();
+      } else {
+        // Selecciono una transaccion
+        onNavigate('movimientos');
+        onClose();
+      }
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[10vh] sm:pt-[15vh]">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Main Omnibar Box */}
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden animate-fade-in-down mx-4 sm:mx-auto border border-slate-200 dark:border-slate-800 flex flex-col max-h-[80vh]">
+        
+        {/* Search Input Area */}
+        <div className="relative flex items-center px-4 py-4 border-b border-slate-100 dark:border-slate-800">
+          <MagnifyingGlass size={26} className="text-primary-500 shrink-0 mx-2" weight="bold" />
+          <input
+            ref={inputRef}
+            className="flex-1 bg-transparent border-none outline-none px-4 text-xl font-bold text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            placeholder="Busca transacciones o navega..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button 
+            className="p-2 ml-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-white tracking-widest text-xs font-black transition-colors flex items-center gap-1"
+            onClick={onClose}
+          >
+            ESC
+          </button>
+        </div>
+
+        {/* Results Area */}
+        <div className="overflow-y-auto px-4 pb-6 pt-2 custom-scrollbar">
+          
+          {/* Section: Atajos Nav */}
+          {actionResults.length > 0 && (
+            <div className="mt-4">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-3 mb-2 block">
+                Atajos de Navegación
+              </span>
+              <ul className="space-y-1">
+                {actionResults.map((action, i) => (
+                  <li 
+                    key={action.id}
+                    className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-colors ${
+                      i === selectedIndex 
+                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                    onClick={() => { onNavigate(action.id); onClose(); }}
+                  >
+                    <action.icon size={20} weight={i === selectedIndex ? "fill" : "regular"} />
+                    <span className="font-bold">{action.label}</span>
+                    {i === selectedIndex && (
+                      <span className="ml-auto flex items-center gap-1 opacity-60 text-xs font-black">
+                        ENTRAR <Keyboard size={14} />
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Section: Transactions */}
+          {searchResults.length > 0 && (
+            <div className="mt-6">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-3 mb-2 block">
+                Transacciones Encontradas
+              </span>
+              <ul className="space-y-2">
+                {searchResults.map((tx, idx) => {
+                  const absoluteIndex = actionResults.length + idx;
+                  const isSelected = absoluteIndex === selectedIndex;
+                  const isIncome = tx.type === 'income';
+
+                  return (
+                     <li 
+                      key={tx.id}
+                      className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-colors border border-transparent ${
+                        isSelected 
+                          ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white' 
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400'
+                      }`}
+                      onClick={() => { onNavigate('movimientos'); onClose(); }}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        isIncome ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+                      }`}>
+                        {isIncome ? <ArrowUp size={20} /> : <ArrowDown size={20} />}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold truncate text-sm">{tx.description}</p>
+                        <p className="text-xs opacity-70 uppercase tracking-widest font-semibold mt-0.5">
+                          {formatDate(tx.date)} {tx.category && `• ${tx.category}`}
+                        </p>
+                      </div>
+
+                      <div className={`font-black text-sm text-right ${isIncome ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {isQuerying && searchResults.length === 0 && actionResults.length === 0 && (
+            <div className="text-center py-12 px-4 animate-fade-in">
+              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+                <MagnifyingGlass size={32} className="text-slate-400" />
+              </div>
+              <h3 className="text-lg font-black text-slate-800 dark:text-white mb-2">Sin resultados</h3>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                No logramos encontrar nada con "{searchTerm}" en tu base de datos local.
+              </p>
+            </div>
+          )}
+
+        </div>
+        
+        {/* Footer */}
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500 font-bold flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1"><Keyboard size={16} /> Navegar: Flechas</span>
+            <span className="flex items-center gap-1"><Keyboard size={16} /> Seleccionar: Enter</span>
+          </div>
+          <span>SaaS Edition</span>
+        </div>
+
+      </div>
+    </div>
+  );
+};

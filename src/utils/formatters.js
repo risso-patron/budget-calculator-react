@@ -3,17 +3,27 @@
  * @param {number} amount - Cantidad a formatear
  * @returns {string} - Cantidad formateada (ej: "$1,234.56")
  */
-export const formatCurrency = (amount) => {
+export const formatCurrency = (amount, currencyCode = 'USD') => {
   if (typeof amount !== 'number' || isNaN(amount)) {
     return '$0.00';
   }
   
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const safeCode = currencyCode === 'PAB' ? 'USD' : currencyCode;
+  try {
+    let formatted = new Intl.NumberFormat('es-419', {
+      style: 'currency',
+      currency: safeCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+    
+    if (currencyCode === 'PAB') {
+      formatted = formatted.replace('US$', 'B/.');
+    }
+    return formatted;
+  } catch {
+    return `$${amount.toFixed(2)}`;
+  }
 };
 
 /**

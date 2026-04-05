@@ -61,72 +61,61 @@ const AchievementCard = ({ achievement, isUnlocked, unlockedAt }) => {
   return (
     <div
       className={`
-        relative rounded-lg p-4 border-2 transition-all
+        relative rounded-xl p-3 border-2 transition-all
         ${isUnlocked 
           ? 'bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-400 dark:border-yellow-600' 
-          : 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 opacity-50'
+          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50'
         }
       `}
     >
       {/* Badge de puntos */}
       <div className="absolute top-2 right-2">
-        <span className={`
-          text-xs font-bold px-2 py-1 rounded-full
-          ${isUnlocked 
+        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+          isUnlocked 
             ? 'bg-yellow-400 dark:bg-yellow-600 text-gray-900' 
-            : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-          }
-        `}>
-          {achievement.points} pts
+            : 'bg-gray-300 dark:bg-gray-700 text-gray-600'
+        }`}>
+          {achievement.points}pts
         </span>
       </div>
 
-      {/* Icono Phosphor */}
+      {/* Icono */}
       {(() => {
         const IconComp = ACHIEVEMENT_ICON[achievement.id] || CATEGORY_ICON[achievement.category] || Star;
-        const color = isUnlocked
-          ? (ACHIEVEMENT_COLOR[achievement.category] || '#F59E0B')
-          : '#6B7280';
+        const color = isUnlocked ? (ACHIEVEMENT_COLOR[achievement.category] || '#F59E0B') : '#6B7280';
         return (
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 border ${
-            isUnlocked
-              ? 'bg-amber-500/10 border-amber-500/20'
-              : 'bg-gray-500/10 border-gray-500/20'
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 border ${
+            isUnlocked ? 'bg-amber-500/10 border-amber-500/20' : 'bg-gray-500/10 border-gray-500/20'
           }`}>
-            <IconComp weight="light" size={26} color={color} />
+            <IconComp weight="fill" size={18} color={color} />
           </div>
         );
       })()}
 
       {/* Nombre */}
-      <h3 className={`font-bold text-lg mb-1 ${
-        isUnlocked 
-          ? 'text-gray-800 dark:text-white' 
-          : 'text-gray-600 dark:text-gray-400'
+      <h3 className={`font-black text-xs leading-tight mb-0.5 ${
+        isUnlocked ? 'text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-500'
       }`}>
         {achievement.name}
       </h3>
 
-      {/* Descripción */}
-      <p className={`text-sm ${
-        isUnlocked 
-          ? 'text-gray-600 dark:text-gray-300' 
-          : 'text-gray-500 dark:text-gray-500'
+      {/* Descripción — oculta en móvil */}
+      <p className={`text-[10px] hidden sm:block ${
+        isUnlocked ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'
       }`}>
         {achievement.description}
       </p>
 
-      {/* Fecha de desbloqueo */}
+      {/* Fecha */}
       {isUnlocked && unlockedAt && (
-        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          Desbloqueado: {new Date(unlockedAt).toLocaleDateString('es-ES')}
+        <div className="mt-1 text-[9px] text-gray-400">
+          {new Date(unlockedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
         </div>
       )}
 
-      {/* Candado si está bloqueado */}
       {!isUnlocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/5 dark:bg-gray-900/20 rounded-lg">
-          <Lock weight="light" size={28} color="#9CA3AF" className="opacity-60" />
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/5 dark:bg-gray-900/20 rounded-xl">
+          <Lock weight="bold" size={18} color="#9CA3AF" className="opacity-50" />
         </div>
       )}
     </div>
@@ -173,49 +162,37 @@ export const AchievementsPanel = ({ unlockedAchievements, isAchievementUnlocked 
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-          Logros
-        </h2>
-        
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-black text-gray-800 dark:text-white">Logros</h2>
         <div className="text-right">
-          <div className="text-sm text-gray-600 dark:text-gray-400">Progreso Total</div>
-          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+          <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Progreso Total</div>
+          <div className="text-xl font-black text-primary-600 dark:text-primary-400">
             {unlockedAchievements.length} / {allAchievements.length}
           </div>
         </div>
       </div>
 
       {/* Filtros por categoría */}
-      <div className="mb-6 overflow-x-auto">
-        <div className="flex gap-2 pb-2">
+      <div className="mb-4 overflow-x-auto">
+        <div className="flex gap-1.5 pb-1 whitespace-nowrap">
           {categories.map(category => {
             const progress = getCategoryProgress(category.id);
             const isActive = selectedCategory === category.id;
-            
             return (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap
-                  ${isActive 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wide transition-all ${
+                  isActive 
                     ? 'bg-primary-600 dark:bg-primary-500 text-white shadow-md' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }
-                `}
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}
               >
-                <category.Icon
-                  weight="fill"
-                  size={15}
-                  color={isActive ? '#ffffff' : ACHIEVEMENT_COLOR[category.id] || '#6B7280'}
-                />
+                <category.Icon weight="fill" size={12} color={isActive ? '#ffffff' : ACHIEVEMENT_COLOR[category.id] || '#6B7280'} />
                 <span>{category.name}</span>
                 {category.id !== 'all' && (
-                  <span className={`text-xs ${isActive ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
-                    {progress}%
-                  </span>
+                  <span className={`${isActive ? 'text-white/70' : 'text-gray-400'}`}>{progress}%</span>
                 )}
               </button>
             );
@@ -223,12 +200,11 @@ export const AchievementsPanel = ({ unlockedAchievements, isAchievementUnlocked 
         </div>
       </div>
 
-      {/* Grid de logros */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Grid compacto — 2 cols en móvil, 3 en tablet, 4 en desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
         <AnimatePresence mode="popLayout">
           {filteredAchievements.map(achievement => {
             const unlocked = unlockedAchievements.find(a => a.id === achievement.id);
-            
             return (
               <AchievementCard
                 key={achievement.id}
@@ -241,11 +217,8 @@ export const AchievementsPanel = ({ unlockedAchievements, isAchievementUnlocked 
         </AnimatePresence>
       </div>
 
-      {/* Mensaje si no hay logros en categoría */}
       {filteredAchievements.length === 0 && (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-          No hay logros en esta categoría
-        </div>
+        <div className="text-center py-8 text-gray-400 text-sm">Sin logros en esta categoría</div>
       )}
     </div>
   );

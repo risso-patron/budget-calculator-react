@@ -5,6 +5,7 @@ import { STORAGE_KEYS, TRANSACTION_TYPES, EXPENSE_CATEGORIES } from '../constant
 import { validateTransaction } from '../utils/validators';
 import { calculateTotal, calculateBalance, calculateCategoryAnalysis } from '../utils/calculations';
 import { loadFromStorage, saveToStorage } from '../core/storageEngine';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 // ─── Mappers Supabase ↔ Local ────────────────────────────────────────────────
 
@@ -12,6 +13,7 @@ const fromSupabase = (row) => ({
   id: row.id,
   description: row.description,
   amount: parseFloat(row.amount),
+  currency: row.currency || 'USD',
   type: row.type,
   category: row.category === 'income' ? undefined : row.category,
   date: row.date,
@@ -23,6 +25,7 @@ const toSupabase = (tx, userId) => ({
   user_id: userId,
   description: tx.description.trim(),
   amount: parseFloat(tx.amount),
+  currency: tx.currency || 'USD',
   type: tx.type,
   category: tx.category || (tx.type === TRANSACTION_TYPES.INCOME ? 'income' : 'Otros'),
   date: tx.date,
@@ -34,6 +37,7 @@ const toSupabase = (tx, userId) => ({
  */
 export const useTransactions = () => {
   const { user } = useAuth();
+  const { convertCurrency, selectedCurrency } = useCurrency(); // MULTI-MONEDA
 
   // Inicializar desde caché local para evitar pantalla vacía en el primer render
   const [incomes, setIncomes] = useState(() => loadFromStorage(STORAGE_KEYS.INCOMES, []));
@@ -117,9 +121,21 @@ export const useTransactions = () => {
     if (error) console.error('Supabase delete error:', error.message);
   }, [user]);
 
+  const syncDeleteMultiple = useCallback(async (ids) => {
+    if (!user || !ids.length) return;
+    const { error } = await supabase.from('transactions').delete().in('id', ids).eq('user_id', user.id);
+    if (error) console.error('Supabase delete multiple error:', error.message);
+  }, [user]);
+
+  const syncUpdateMultiple = useCallback(async (updates) => {
+    if (!user || !updates.length) return;
+    const { error } = await supabase.from('transactions').upsert(updates.map(tx => toSupabase(tx, user.id)));
+    if (error) console.error('Supabase update multiple error:', error.message);
+  }, [user]);
+
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
-  const addIncome = useCallback((description, amount, date = null) => {
+  const addIncome = useCallback((description, amount, date = null, currency = 'USD') => {
     const validation = validateTransaction({ description, amount, date });
     if (!validation.isValid) {
       showAlert('error', Object.values(validation.errors)[0]);
@@ -130,6 +146,7 @@ export const useTransactions = () => {
       id: crypto.randomUUID(),
       description: description.trim(),
       amount: parseFloat(amount),
+      currency,
       type: TRANSACTION_TYPES.INCOME,
       date: date || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
@@ -142,7 +159,7 @@ export const useTransactions = () => {
     return true;
   }, [showAlert, syncInsert, markSaved]);
 
-  const addExpense = useCallback((description, category, amount, date = null) => {
+  const addExpense = useCallback((description, category, amount, date = null, currency = 'USD') => {
     const validation = validateTransaction(
       { description, category, amount, date },
       true,
@@ -158,6 +175,7 @@ export const useTransactions = () => {
       description: description.trim(),
       category,
       amount: parseFloat(amount),
+      currency,
       type: TRANSACTION_TYPES.EXPENSE,
       date: date || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
@@ -217,10 +235,46 @@ export const useTransactions = () => {
 
   const removeExpense = useCallback((id) => {
     setExpenses(prev => prev.filter(e => e.id !== id));
-    showAlert('success', 'Gasto eliminado');
     syncDelete(id);
     markSaved();
-  }, [showAlert, syncDelete, markSaved]);
+    showAlert('success', 'Gasto eliminado con éxito.');
+  }, [syncDelete, markSaved, showAlert]);
+
+  // --- CRM BULK ACTIONS ---
+  const removeMultiple = useCallback((ids) => {
+    setIncomes(prev => prev.filter(i => !ids.includes(i.id)));
+    setExpenses(prev => prev.filter(e => !ids.includes(e.id)));
+    syncDeleteMultiple(ids);
+    markSaved();
+    showAlert('success', `${ids.length} transacciones eliminadas.`);
+  }, [syncDeleteMultiple, markSaved, showAlert]);
+
+  const categorizeMultiple = useCallback((ids, newCategory) => {
+    let updatedTxsForSync = [];
+    
+    setIncomes(prev => prev.map(inc => {
+      if (ids.includes(inc.id)) {
+        console.warn('Attempted to categorize an income, ignoring.');
+        return inc;
+      }
+      return inc;
+    }));
+
+    setExpenses(prev => prev.map(exp => {
+      if (ids.includes(exp.id)) {
+        const updated = { ...exp, category: newCategory };
+        updatedTxsForSync.push(updated);
+        return updated;
+      }
+      return exp;
+    }));
+
+    if (updatedTxsForSync.length > 0) {
+      syncUpdateMultiple(updatedTxsForSync);
+      markSaved();
+      showAlert('success', `${updatedTxsForSync.length} gastos movidos a ${newCategory}.`);
+    }
+  }, [syncUpdateMultiple, markSaved, showAlert]);
 
   const clearAll = useCallback(() => {
     setIncomes([]);
@@ -249,6 +303,7 @@ export const useTransactions = () => {
           id: crypto.randomUUID(),
           description: description.trim(),
           amount: parseFloat(amount),
+          currency: transaction.currency || 'USD',
           date: date || new Date().toISOString().split('T')[0],
           createdAt: new Date().toISOString(),
         };
@@ -304,12 +359,18 @@ export const useTransactions = () => {
     }
   }, [user?.id]);
 
-  // ── Cálculos memoizados ───────────────────────────────────────────────────
-  const totalIncome = useMemo(() => calculateTotal(incomes), [incomes]);
-  const totalExpenses = useMemo(() => calculateTotal(expenses), [expenses]);
-  const balance = useMemo(() => calculateBalance(totalIncome, totalExpenses), [totalIncome, totalExpenses]);
-  const categoryAnalysis = useMemo(() => calculateCategoryAnalysis(expenses, totalExpenses), [expenses, totalExpenses]);
+  // ── Cálculos memoizados (Normalizados a la Moneda Principal) ─────────────
+  
+  // Normalizador interno: Mapea todas las transacciones a la moneda base seleccionada usando la tasa en tiempo real
+  const normalizedIncomes = useMemo(() => incomes.map(t => ({ ...t, amount: convertCurrency(t.amount, t.currency || 'USD', selectedCurrency) })), [incomes, convertCurrency, selectedCurrency]);
+  const normalizedExpenses = useMemo(() => expenses.map(t => ({ ...t, amount: convertCurrency(t.amount, t.currency || 'USD', selectedCurrency) })), [expenses, convertCurrency, selectedCurrency]);
 
+  const totalIncome = useMemo(() => calculateTotal(normalizedIncomes), [normalizedIncomes]);
+  const totalExpenses = useMemo(() => calculateTotal(normalizedExpenses), [normalizedExpenses]);
+  const balance = useMemo(() => calculateBalance(totalIncome, totalExpenses), [totalIncome, totalExpenses]);
+  const categoryAnalysis = useMemo(() => calculateCategoryAnalysis(normalizedExpenses, totalExpenses), [normalizedExpenses, totalExpenses]);
+
+  // filteredTransactions NO DEBE NORMALIZARSE para no perder la visualización individual.
   const filteredTransactions = useMemo(() => {
     const all = [
       ...incomes.map(t => ({ ...t, type: 'income' })),
@@ -341,6 +402,8 @@ export const useTransactions = () => {
     updateExpense,
     removeIncome,
     removeExpense,
+    removeMultiple,
+    categorizeMultiple,
     clearAll,
     refreshTransactions,
     setFilter,

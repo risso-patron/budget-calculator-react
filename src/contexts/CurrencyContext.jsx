@@ -34,8 +34,36 @@ const RATES_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 horas
  */
 export const CurrencyProvider = ({ children }) => {
   const [selectedCurrency, setSelectedCurrency] = useLocalStorage('budget_display_currency', 'USD');
+  const [currencyFreq, setCurrencyFreq] = useLocalStorage('budget_currency_freq', { 'USD': 1 });
   const [rates, setRates] = useState(FALLBACK_RATES);
   const [ratesLoading, setRatesLoading] = useState(false);
+
+  /**
+   * Obtiene la divisa de uso más frecuente por este usuario.
+   */
+  const getSmartDefaultCurrency = useCallback(() => {
+    let topCode = 'USD';
+    let max = 0;
+    Object.entries(currencyFreq).forEach(([code, count]) => {
+      if (count > max) {
+        max = count;
+        topCode = code;
+      }
+    });
+    // Validar si existe en los soportados
+    return SUPPORTED_CURRENCIES.find(c => c.code === topCode) ? topCode : 'USD';
+  }, [currencyFreq]);
+
+  /**
+   * Registra estadísticamente cuando un usuario usa una moneda al guardar.
+   */
+  const recordCurrencyUsage = useCallback((code) => {
+    setCurrencyFreq(prev => ({
+      ...prev,
+      [code]: (prev[code] || 0) + 1
+    }));
+  }, [setCurrencyFreq]);
+
 
   const fetchRates = useCallback(async () => {
     // Revisar caché para evitar llamadas excesivas
@@ -67,16 +95,27 @@ export const CurrencyProvider = ({ children }) => {
   }, [fetchRates]);
 
   /**
-   * Convierte un monto desde USD a la moneda destino.
-   * @param {number} amountUSD
-   * @param {string} [toCurrency] - Código ISO 4217 (por defecto selectedCurrency)
+   * Conversor Absoluto: Convierte un monto de CUALQUIER moneda origen a otra destino.
+   * Resuelve el salto triangular: (Monto / TasaOrigen) * TasaDestino
+   */
+  const convertCurrency = useCallback((amount, fromCode = 'USD', toCode = selectedCurrency) => {
+    const rateFrom = rates[fromCode] || 1;
+    const rateTo = rates[toCode] || 1;
+    // Si ambas son iguales, retorna directo
+    if (fromCode === toCode) return Number(amount);
+    
+    // Primero pasamos de fromCode -> USD base (dividiendo por su tasa frente al dólar)
+    const amountInUSD = amount / rateFrom;
+    // Luego de USD base -> toCode (multiplicando por la tasa del destino)
+    return amountInUSD * rateTo;
+  }, [rates, selectedCurrency]);
+
+  /**
+   * Compatibilidad hacia atrás: Convierte de USD a la seleccionada.
    */
   const convertFromUSD = useCallback(
-    (amountUSD, toCurrency = selectedCurrency) => {
-      const rate = rates[toCurrency] ?? 1;
-      return amountUSD * rate;
-    },
-    [rates, selectedCurrency]
+    (amountUSD, toCurrency = selectedCurrency) => convertCurrency(amountUSD, 'USD', toCurrency),
+    [convertCurrency, selectedCurrency]
   );
 
   /**
@@ -112,9 +151,12 @@ export const CurrencyProvider = ({ children }) => {
         rates,
         ratesLoading,
         convertFromUSD,
+        convertCurrency, // Novedad Multi-moneda
         formatAmount,
         currencyInfo,
         currencies: SUPPORTED_CURRENCIES,
+        getSmartDefaultCurrency, // Predictivo
+        recordCurrencyUsage, // Predictivo
       }}
     >
       {children}

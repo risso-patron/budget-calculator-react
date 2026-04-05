@@ -88,9 +88,15 @@ export const TransactionList = ({
   onRemoveExpense,
   onUpdateIncome,
   onUpdateExpense,
+  onRemoveMultiple,
+  onCategorizeMultiple,
 }) => {
   const [showIncomes, setShowIncomes] = useState(true);
   const [showExpenses, setShowExpenses] = useState(true);
+
+  // CRM Bulk Actions State
+  const [selectedExpenseIds, setSelectedExpenseIds] = useState([]);
+  const [bulkCategory, setBulkCategory] = useState('');
   
   // Estados de filtros
   const [incomeSearch, setIncomeSearch] = useState('');
@@ -234,6 +240,61 @@ export const TransactionList = ({
           />
         )}
         
+        {/* CRM Bulk Action Bar */}
+        {selectedExpenseIds.length > 0 && (
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 mb-4 flex items-center justify-between animate-fade-in-down shadow-sm">
+            <span className="text-sm font-bold text-emerald-800 dark:text-emerald-400">
+              {selectedExpenseIds.length} seleccionados
+            </span>
+            <div className="flex gap-2 items-center">
+              <select
+                value={bulkCategory}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    onCategorizeMultiple(selectedExpenseIds, e.target.value);
+                    setSelectedExpenseIds([]);
+                    setBulkCategory('');
+                  }
+                }}
+                className="px-2 py-1.5 text-xs font-semibold bg-white dark:bg-gray-800 border-2 border-emerald-200 dark:border-emerald-700 rounded-md focus:outline-none dark:text-white"
+              >
+                <option value="">🏷️ Mover a...</option>
+                {EXPENSE_CATEGORIES.map(c => (
+                  <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => {
+                  if (window.confirm(`¿Seguro que deseas eliminar ${selectedExpenseIds.length} transacciones?`)) {
+                    onRemoveMultiple(selectedExpenseIds);
+                    setSelectedExpenseIds([]);
+                  }
+                }}
+                className="px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-400 text-xs font-bold rounded-md transition-colors"
+              >
+                🗑️ Eliminar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Header con Master Checkbox */}
+        {showExpenses && hasFilteredExpenses && (
+          <div className="flex items-center px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+            <input
+              type="checkbox"
+              checked={selectedExpenseIds.length === filteredExpenses.length && filteredExpenses.length > 0}
+              onChange={(e) => {
+                if (e.target.checked) setSelectedExpenseIds(filteredExpenses.map(t => t.id));
+                else setSelectedExpenseIds([]);
+              }}
+              className="w-4 h-4 rounded text-indigo-600 border-gray-300 mr-3 cursor-pointer hover:scale-110"
+              title="Seleccionar todos"
+            />
+            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Seleccionar todos</span>
+          </div>
+        )}
+
         {showExpenses && (
           <div className="flex-1 max-h-[500px] overflow-y-auto custom-scrollbar">
             {!hasExpenses ? (
@@ -265,6 +326,12 @@ export const TransactionList = ({
                     onRemove={() => onRemoveExpense(expense.id)}
                     onEdit={onUpdateExpense}
                     index={index}
+                    isSelected={selectedExpenseIds.includes(expense.id)}
+                    onToggleSelect={(id, checked) => {
+                      setSelectedExpenseIds(prev => 
+                        checked ? [...prev, id] : prev.filter(i => i !== id)
+                      );
+                    }}
                   />
                 ))}
               </div>
@@ -283,4 +350,6 @@ TransactionList.propTypes = {
   onRemoveExpense: PropTypes.func.isRequired,
   onUpdateIncome: PropTypes.func.isRequired,
   onUpdateExpense: PropTypes.func.isRequired,
+  onRemoveMultiple: PropTypes.func,
+  onCategorizeMultiple: PropTypes.func,
 };

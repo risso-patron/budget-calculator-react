@@ -3,22 +3,24 @@ import {
   User, 
   Database, 
   SignOut, 
-  Info, 
-  LinkedinLogo, 
-  CaretRight,
   ShieldCheck,
-  TrendUp
+  Receipt,
+  Target,
+  FileCsv
 } from '@phosphor-icons/react'
 import { useAuth } from '../../contexts/AuthContext'
 import { AccountSettingsModal } from './AccountSettingsModal'
 
-export const ProfileMenu = ({ onClearAll, transactionCount = 0 }) => {
+/**
+ * ProfileMenu - Menú de usuario con soporte para Sidebar y Versión Móvil
+ * @param {string} align - 'right' (default), 'sidebar' (upward), 'center' (mobile)
+ * @param {boolean} condensed - Si es true, solo muestra el avatar (mejor para móvil)
+ */
+export const ProfileMenu = ({ onClearAll, transactionCount = 0, onNavigate, align = 'right', condensed = false }) => {
   const { user, signOut } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-
-  // Estados locales para manejo de errores de imagen
   const [imageError, setImageError] = useState(false)
 
   const handleLogout = async () => {
@@ -32,192 +34,156 @@ export const ProfileMenu = ({ onClearAll, transactionCount = 0 }) => {
     onClearAll?.()
   }
 
+  const handleShortcut = (tabId) => {
+    onNavigate?.(tabId)
+    setIsOpen(false)
+  }
+
   if (!user) return null
 
-  // Jerarquía de Avatar: 1. Personalizado (Emoji) > 2. Google (si no hay error) > 3. Iniciales
+  const isSidebar = align === 'sidebar';
+  const isMobile = align === 'mobile';
+
+  // Jerarquía de Avatar
   const customAvatar = user.user_metadata?.custom_avatar
   const avatarUrl = user.user_metadata?.avatar_url
   const initials = user.user_metadata?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'
 
   const renderAvatar = (size = 'small') => {
-    // 1. Emoji Personalizado
+    const sizeClasses = {
+      small: 'w-10 h-10 text-xl',
+      large: 'w-14 h-14 text-2xl'
+    };
+    
     if (customAvatar) {
       return (
-        <div className={`${size === 'small' ? 'w-9 h-9 text-xl' : 'w-12 h-12 text-2xl'} flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10`}>
+        <div className={`${sizeClasses[size]} flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-white/10`}>
           {customAvatar}
         </div>
       )
     }
-
-    // 2. Google Avatar (si no ha fallado)
     if (avatarUrl && !imageError) {
       return (
         <img 
           src={avatarUrl} 
           alt="Profile" 
           onError={() => setImageError(true)}
-          className={`${size === 'small' ? 'w-9 h-9' : 'w-12 h-12'} rounded-xl shadow-lg border-2 border-white/50 group-hover:scale-105 transition-transform object-cover`}
+          className={`${sizeClasses[size]} rounded-2xl shadow-lg border-2 border-white/50 object-cover`}
         />
       )
     }
-
-    // 3. Iniciales (Fallback)
     return (
-      <div className={`${size === 'small' ? 'w-9 h-9' : 'w-12 h-12'} bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg group-hover:scale-105 transition-transform`}>
+      <div className={`${sizeClasses[size]} bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg uppercase`}>
         {initials}
       </div>
     )
   }
 
   return (
-    <div className="relative">
+    <div className={`relative ${isSidebar ? 'w-full' : ''}`}>
       {/* Botón de Perfil (Trigger) */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center space-x-3 px-3 py-2 rounded-2xl bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 transition-all duration-500 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-glass"
+        className={`group flex items-center transition-all duration-300 backdrop-blur-xl border border-white/30 dark:border-white/5 shadow-glass ${
+          condensed 
+            ? 'p-0.5 rounded-2xl bg-transparent border-none' 
+            : `space-x-3 px-3 py-2.5 rounded-2xl w-full ${isSidebar ? 'bg-slate-800/40 hover:bg-slate-700/60' : 'bg-white/40 dark:bg-white/5 hover:bg-white/60'}`
+        }`}
       >
         {renderAvatar('small')}
-        <div className="text-left hidden sm:block">
-          <p className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-tighter leading-none mb-1">
-            {user.user_metadata?.full_name?.split(' ')[0] || 'Usuario'}
-          </p>
-          <div className="flex items-center gap-1 opacity-60">
-             <ShieldCheck size={10} className="text-emerald-500" weight="fill" />
-             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Verificado</span>
-          </div>
-        </div>
-        <svg
-          className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-500 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-        </svg>
+        
+        {!condensed && (
+          <>
+            <div className="text-left flex-1 min-w-0">
+              <p className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-tighter leading-none mb-1 truncate">
+                {user.user_metadata?.full_name?.split(' ')[0] || 'Usuario'}
+              </p>
+              <div className="flex items-center gap-1 opacity-60">
+                 <ShieldCheck size={10} className="text-emerald-500" weight="fill" />
+                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">OK</span>
+              </div>
+            </div>
+            <svg
+              className={`w-3 h-3 text-slate-400 dark:text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+            </svg>
+          </>
+        )}
       </button>
 
-      {/* Dropdown Menu Glassmorphism */}
+      {/* Dropdown Menu */}
       {isOpen && (
         <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute right-0 mt-3 w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/40 dark:border-white/5 overflow-hidden z-[100] animate-fade-in-slide">
+          <div className="fixed inset-0 z-[110] bg-black/20 backdrop-blur-sm sm:bg-transparent" onClick={() => setIsOpen(false)} />
+          <div className={`
+            fixed sm:absolute z-[120] 
+            ${condensed ? 'top-20 inset-x-4 sm:top-full sm:right-0 sm:inset-x-auto sm:mt-3' : isSidebar ? 'bottom-full left-0 mb-4' : 'right-0 mt-3'}
+            w-auto sm:w-80 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden animate-fade-in-slide
+          `}>
             
-            {/* Cabecera del Menú: Perfil Detallado */}
-            <div className="p-5 bg-gradient-to-br from-primary-50/50 to-white dark:from-primary-900/10 dark:to-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+            <div className="p-4 bg-slate-50 dark:bg-slate-950/50 border-b border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-4">
                 {renderAvatar('large')}
-                <div>
-                  <p className="font-black text-slate-900 dark:text-white text-sm leading-tight">
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">
                     {user.user_metadata?.full_name || 'Usuario'}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-medium">
                     {user.email}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Cuerpo del Menú: Secciones */}
-            <div className="p-2 space-y-1">
-              
-              {/* Sección 1: Datos y Gestión */}
-              <div className="px-3 py-2">
-                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] px-2 mb-2 block">Gestión de Datos</span>
-                
+            {/* ATAJOS */}
+            <div className="px-4 py-4 bg-white dark:bg-slate-900">
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4 pl-1">Accesos Rápidos</p>
+              <div className="grid grid-cols-3 gap-3">
+                <button onClick={() => handleShortcut('movimientos')} className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all group">
+                  <Receipt size={22} weight="fill" className="text-emerald-500 mb-1" />
+                  <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase">Gasto</span>
+                </button>
+                <button onClick={() => handleShortcut('planificacion')} className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all group">
+                  <Target size={22} weight="fill" className="text-amber-500 mb-1" />
+                  <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase">Metas</span>
+                </button>
+                <button onClick={() => handleShortcut('herramientas')} className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all group">
+                  <FileCsv size={22} weight="fill" className="text-blue-500 mb-1" />
+                  <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase">Exportar</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-2 pt-0">
+              <div className="px-4 py-3 space-y-2">
+                <button onClick={() => { setIsSettingsOpen(true); setIsOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-2xl transition-all font-bold">
+                  <User size={18} weight="bold" />
+                  <span>Configuración de Cuenta</span>
+                </button>
                 {onClearAll && transactionCount > 0 && (
-                  <button
-                    onClick={handleClear}
-                    className="w-full group flex items-center gap-3 px-3 py-2.5 text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition-all"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Database size={18} weight="fill" />
-                    </div>
-                    <div className="text-left">
-                      <span className="block font-bold">Limpiar Historial</span>
-                      <span className="text-[10px] opacity-70">{transactionCount} transacciones</span>
-                    </div>
-                    <CaretRight size={12} className="ml-auto opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  <button onClick={handleClear} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-2xl transition-all font-bold">
+                    <Database size={18} weight="fill" />
+                    <span>Eliminar Datos Locales</span>
                   </button>
                 )}
-
-                <button 
-                  onClick={() => { setIsSettingsOpen(true); setIsOpen(false); }}
-                  className="w-full group flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <User size={18} weight="bold" />
-                  </div>
-                  <span className="font-bold text-xs uppercase tracking-wider">Ajustes Cuenta</span>
-                  <CaretRight size={12} className="ml-auto opacity-40" />
-                </button>
               </div>
-
-              {/* Separador */}
-              <div className="mx-4 border-t border-slate-100 dark:border-slate-800 my-2" />
-
-              {/* Sección 2: Info & Comunidad */}
-              <div className="px-3 py-2">
-                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] px-2 mb-2 block">Acerca de</span>
-                
-                <a
-                  href="https://www.linkedin.com/in/jorge-luis-risso-/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 px-3 py-2.5 text-sm text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-xl transition-all"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <LinkedinLogo size={18} weight="fill" />
-                  </div>
-                  <div className="text-left">
-                    <span className="block font-bold">Desarrollador (R P)</span>
-                    <span className="text-[10px] opacity-70">Conectar en LinkedIn</span>
-                  </div>
-                </a>
-
-                <div className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-400">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <Info size={18} weight="bold" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Versión 2.0.0 Stable</span>
-                </div>
-              </div>
-
-              {/* Sección 3: Sesión */}
-              <div className="p-2 pt-1">
-                <button
-                  onClick={handleLogout}
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-xs uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
-                >
+              
+              <div className="p-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button onClick={handleLogout} disabled={loading} className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-[11px] uppercase tracking-[0.2em] shadow-lg">
                   <SignOut size={16} weight="bold" />
-                  {loading ? 'Cerrando...' : 'Cerrar Sesión'}
+                  {loading ? 'Saliendo...' : 'Cerrar Sesión'}
                 </button>
               </div>
-
             </div>
           </div>
         </>
       )}
 
-      {/* MODAL DE AJUSTES */}
-      <AccountSettingsModal 
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onShowAlert={(type, msg) => {
-          // Nota: El alert global se dispara desde el AppContent, 
-          // pero como este componente es hijo directo en App.jsx, 
-          // necesitamos pasar el alert hacia arriba o usar un contexto.
-          // El diseño actual usa el alert del hook useTransactions inyectado vía AppContent.
-          console.log(`[Alert] ${type}: ${msg}`);
-          // Para este caso, lanzaremos el alert nativo o usaremos un event
-          window.dispatchEvent(new CustomEvent('app-alert', { detail: { type, message: msg } }));
-        }}
-      />
+      <AccountSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onShowAlert={(type, msg) => {
+        window.dispatchEvent(new CustomEvent('app-alert', { detail: { type, message: msg } }));
+      }} />
     </div>
   )
 }
