@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { logger } from '../utils/logger'
 import { 
   analyzeFinances, 
   suggestCategory, 
@@ -45,10 +46,10 @@ export const useAIInsights = (transactions = []) => {
    */
   const checkProviders = useCallback(() => {
     const available = getAvailableProviders()
-    console.log('🤖 Proveedores de IA disponibles:', available)
+    logger.log('🤖 Proveedores de IA disponibles:', available)
     
     if (available.length === 0) {
-      console.warn('⚠️ No hay proveedores de IA configurados')
+      logger.warn('⚠️ No hay proveedores de IA configurados')
       console.info('📖 Lee docs/FREE_AI_SETUP.md para configurar opciones gratuitas')
     }
     
@@ -80,11 +81,11 @@ export const useAIInsights = (transactions = []) => {
       setAnalyzing(true)
       setAnalysisError(null)
       
-      console.log('🔄 Analizando', transactions.length, 'transacciones...')
+      logger.log('🔄 Analizando', transactions.length, 'transacciones...')
       
       const result = await analyzeFinances(transactions, user.id, monthlyTotals)
       
-      console.log('✅ Análisis completado con', result.provider)
+      logger.log('✅ Análisis completado con', result.provider)
       
       setAnalysis(result)
       
@@ -93,7 +94,7 @@ export const useAIInsights = (transactions = []) => {
       
       return result
     } catch (error) {
-      console.error('❌ Error en análisis:', error)
+      logger.error('❌ Error en análisis:', error)
       setAnalysisError(error.message || 'Error al analizar finanzas')
       return null
     } finally {
@@ -116,7 +117,7 @@ export const useAIInsights = (transactions = []) => {
       setSuggestedCategory(result)
       return result
     } catch (error) {
-      console.error('Error sugiriendo categoría:', error)
+      logger.error('Error sugiriendo categoría:', error)
       return { category: 'Otros', confidence: 0.5 }
     } finally {
       setCategorizing(false)
@@ -152,7 +153,7 @@ export const useAIInsights = (transactions = []) => {
       
       return result
     } catch (error) {
-      console.error('Error en predicción:', error)
+      logger.error('Error en predicción:', error)
       setPredictionError(error.message)
       return null
     } finally {
@@ -189,7 +190,7 @@ export const useAIInsights = (transactions = []) => {
       
       return result
     } catch (error) {
-      console.error('Error detectando anomalías:', error)
+      logger.error('Error detectando anomalías:', error)
       setAlertsError(error.message)
       return null
     } finally {
@@ -204,12 +205,12 @@ export const useAIInsights = (transactions = []) => {
   const bulkCategorize = useCallback(async (transactionsArray) => {
     const available = checkProviders()
     if (available.length === 0) {
-      console.warn('No hay IA configurada, usando categorías por defecto')
+    logger.warn('No hay IA configurada, usando categorías por defecto')
       return transactionsArray.map(t => ({ ...t, category: 'Otros' }))
     }
 
     const total = transactionsArray.length
-    console.log(`🔄 Categorizando ${total} transacciones en lote (batches de 80)...`)
+    logger.log(`🔄 Categorizando ${total} transacciones en lote (batches de 80)...`)
 
     const descriptions = transactionsArray.map(t => t.description)
     const batchResults = await bulkCategorizeTransactions(descriptions)
@@ -221,7 +222,7 @@ export const useAIInsights = (transactions = []) => {
     }))
 
     const success = categorized.filter(c => c.category !== 'Otros').length
-    console.log(`✅ Categorización en lote completada: ${success}/${total} asignadas`)
+    logger.log(`✅ Categorización en lote completada: ${success}/${total} asignadas`)
 
     return categorized
   }, [checkProviders])

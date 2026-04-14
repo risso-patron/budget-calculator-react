@@ -110,10 +110,8 @@ export const callAI = async (prompt, maxTokens = 2000, useCache = true) => {
           if (!jsonMatch) throw new Error('caché inválida');
           JSON.parse(jsonMatch[0]);
         }
-        console.log('✅ Respuesta desde caché');
         return cached.data;
       } catch {
-        console.warn('⚠️ Caché inválida, eliminando...');
         responseCache.delete(cacheKey);
       }
     }

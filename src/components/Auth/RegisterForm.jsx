@@ -66,14 +66,10 @@ export const RegisterForm = ({ onToggleForm }) => {
       fullName: formData.fullName
     })
 
-    console.log('Resultado del registro:', result)
-
     if (result.error) {
-      console.error('Error de registro:', result.error)
       setError(result.error)
       setLoading(false)
     } else {
-      console.log('Registro exitoso:', result.data)
       setSuccess(true)
       setLoading(false)
     }

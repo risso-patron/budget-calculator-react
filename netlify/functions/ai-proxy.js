@@ -51,7 +51,13 @@ function getAllowedOrigins() {
 
 function isOriginAllowed(origin) {
   const allowed = getAllowedOrigins();
-  if (!origin || allowed.length === 0) return true;
+  // Peticiones servidor-a-servidor (sin cabecera origin): siempre permitir
+  if (!origin) return true;
+  // Si no hay lista configurada: usar la URL del sitio que Netlify inyecta automáticamente
+  if (allowed.length === 0) {
+    const siteUrl = process.env.URL || '';
+    return !siteUrl || origin === siteUrl;
+  }
   return allowed.includes(origin);
 }
 
