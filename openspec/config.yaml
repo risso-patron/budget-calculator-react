@@ -1,0 +1,67 @@
+schema: spec-driven
+
+context: |
+  Tech stack: React 19.1, Vite 5.4, TailwindCSS 3.4, Supabase, Netlify Functions
+  Architecture: SPA con hooks custom + Context API, localStorage + Supabase sync
+  Features: Transacciones, IA multi-proveedor (Gemini/Groq/Claude/Ollama), gráficos Recharts, gamificación 24 logros, exportación PDF/CSV, metas financieras, planes Free/Pro
+  Testing: Vitest 4.0 + @testing-library/react + jsdom — tests en src/__tests__/
+  Style: ESLint 9 + Prettier; JSX (.jsx/.js); TailwindCSS utility classes; variables en español cuando aplica
+
+strict_tdd: true
+
+testing:
+  runner:
+    command: "npm test"
+    framework: vitest
+  layers:
+    unit:
+      available: true
+      tool: vitest
+    integration:
+      available: true
+      tool: "@testing-library/react"
+    e2e:
+      available: false
+      tool: null
+  coverage:
+    available: true
+    command: "npm run test:coverage"
+    provider: v8
+  quality:
+    linter:
+      available: true
+      command: "npm run lint"
+      tool: eslint
+    type_checker:
+      available: true
+      command: "npm run type-check"
+      tool: tsc
+    formatter:
+      available: true
+      command: "npm run format"
+      tool: prettier
+
+rules:
+  proposal:
+    - Incluir plan de rollback para cambios en Supabase schema o hooks críticos
+    - Identificar si el cambio afecta localStorage + Supabase sync
+  specs:
+    - Usar formato Given/When/Then para escenarios
+    - Usar palabras RFC 2119 (MUST, SHALL, SHOULD, MAY)
+    - Cubrir casos mobile-first (viewport < 768px)
+  design:
+    - Incluir diagramas de secuencia para flujos con IA o Supabase
+    - Documentar decisiones de arquitectura con justificación
+  tasks:
+    - Agrupar por fase (infra/implementación/tests)
+    - Numeración jerárquica (1.1, 1.2)
+    - Tareas completables en una sesión
+  apply:
+    - Seguir patrones de hooks existentes (useTransactions, useAIInsightsMulti)
+    - Mobile-first, sin animaciones innecesarias
+    - Comentar partes no obvias en español
+  verify:
+    - Correr npm test antes de marcar como completo
+    - Comparar implementación contra cada escenario del spec
+  archive:
+    - Advertir antes de fusionar deltas destructivos
