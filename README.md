@@ -86,7 +86,25 @@
 3.  **Lanzar**
     ```bash
     npm run dev
+    # Abre http://localhost:5173
     ```
+
+> **Variables mínimas requeridas** para correr localmente:
+> ```
+> VITE_SUPABASE_URL=https://tuproyecto.supabase.co
+> VITE_SUPABASE_ANON_KEY=tu_anon_key
+> ```
+> La IA es opcional — sin API keys funciona en modo offline con datos locales.
+
+---
+
+## 🔒 Seguridad
+
+Este repositorio fue auditado en abril 2026. Se verificó:
+- Sin credenciales ni datos sensibles en el código fuente o historial de Git
+- API keys de IA gestionadas exclusivamente vía Netlify Environment Variables (nunca en el bundle cliente)
+- Rate limiting y validación de origen en todas las Netlify Functions
+- RLS (Row Level Security) activo en Supabase
 
 ---
 
