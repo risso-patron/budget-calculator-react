@@ -6,39 +6,80 @@
  *
  * SEGURIDAD:
  * - Las API keys NUNCA llegan al navegador (están solo en variables de entorno del servidor)
- * - Rate limiting server-side (no salteable desde el cliente)
+ * - Rate limiting server-side persistente via Upstash Redis (con fallback en memoria)
  * - Validación y sanitización del input antes de enviarlo a la IA
  *
  * Variables de entorno requeridas en Netlify Dashboard:
- * GOOGLE_GEMINI_API_KEY=...
  * GROQ_API_KEY=...
- * ANTHROPIC_API_KEY=...
+ * SUPABASE_URL=...
+ * SUPABASE_ANON_KEY=...
  * (Sin prefijo VITE_ → no se incluyen en el bundle del cliente)
+ *
+ * Variables opcionales para rate limiting persistente (Upstash Redis free tier):
+ * UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+ * UPSTASH_REDIS_REST_TOKEN=AX...
+ * Sin ellas el rate limiter opera en memoria (se resetea por instancia de función).
  */
 
 import { createClient } from '@supabase/supabase-js';
 
-// Rate limiting en memoria (se resetea por instancia de función)
-// En producción seria Redis u otro store persistente
-const rateLimits = new Map();
 const MAX_REQUESTS_PER_MINUTE = 10;
-const WINDOW_MS = 60 * 1000; // 1 minuto
+const WINDOW_SECONDS = 60;
+const WINDOW_MS = WINDOW_SECONDS * 1000;
 
-/**
- * Verifica rate limit por IP
- */
-function checkRateLimit(identityKey) {
+// ── Fallback en memoria (cuando Upstash no está configurado) ─────────────────
+const rateLimits = new Map();
+
+function checkRateLimitMemory(identityKey) {
   const now = Date.now();
   const requests = rateLimits.get(identityKey) || [];
   const recent = requests.filter(t => now - t < WINDOW_MS);
 
-  if (recent.length >= MAX_REQUESTS_PER_MINUTE) {
-    return false;
-  }
+  if (recent.length >= MAX_REQUESTS_PER_MINUTE) return false;
 
   recent.push(now);
   rateLimits.set(identityKey, recent);
   return true;
+}
+
+// ── Rate limiting persistente via Upstash Redis REST API ─────────────────────
+// Ventana fija de 60 s: INCR + EXPIRE en la primera petición del ciclo.
+// Sin SDKs adicionales — usa fetch nativo disponible en Node 18+.
+async function checkRateLimitRedis(identityKey) {
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!redisUrl || !redisToken) return null; // No configurado → usar memoria
+
+  const key = `rl:ai:${identityKey}`;
+  const headers = { Authorization: `Bearer ${redisToken}` };
+
+  try {
+    // INCR es atómico — incrementa y devuelve el nuevo valor
+    const incrRes = await fetch(`${redisUrl}/incr/${key}`, { headers });
+    if (!incrRes.ok) return null;
+    const { result: count } = await incrRes.json();
+
+    // Solo en la primera petición del ciclo fijamos el TTL
+    if (count === 1) {
+      await fetch(`${redisUrl}/expire/${key}/${WINDOW_SECONDS}`, { headers });
+    }
+
+    return count <= MAX_REQUESTS_PER_MINUTE; // true = permitir, false = limitar
+  } catch {
+    // Error de red → fallar abierto (no bloquear al usuario por caída de Redis)
+    return null;
+  }
+}
+
+/**
+ * Verifica rate limit: intenta Redis persistente; si no disponible usa memoria.
+ * @returns {Promise<boolean>} true = la petición está permitida
+ */
+async function checkRateLimit(identityKey) {
+  const redisResult = await checkRateLimitRedis(identityKey);
+  if (redisResult !== null) return redisResult;
+  return checkRateLimitMemory(identityKey);
 }
 
 function getAllowedOrigins() {
@@ -159,8 +200,8 @@ export const handler = async (event) => {
   const clientIp = event.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
   const rateLimitKey = `${user.id}:${clientIp}`;
 
-  // Verificar rate limit
-  if (!checkRateLimit(rateLimitKey)) {
+  // Verificar rate limit (Redis persistente con fallback en memoria)
+  if (!await checkRateLimit(rateLimitKey)) {
     return {
       statusCode: 429,
       body: JSON.stringify({ error: 'Demasiadas solicitudes. Espera 1 minuto.' }),
@@ -211,6 +252,8 @@ export const handler = async (event) => {
 // Exportes internos solo para pruebas de seguridad.
 export const __private = {
   checkRateLimit,
+  checkRateLimitMemory,
+  checkRateLimitRedis,
   sanitizePrompt,
   isOriginAllowed,
   clearRateLimits: () => rateLimits.clear(),

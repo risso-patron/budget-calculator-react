@@ -25,11 +25,11 @@ describe('ai-proxy security', () => {
 
     let lastAllowed = true;
     for (let i = 0; i < 10; i += 1) {
-      lastAllowed = __private.checkRateLimit(key);
+      lastAllowed = __private.checkRateLimitMemory(key);
     }
 
     expect(lastAllowed).toBe(true);
-    expect(__private.checkRateLimit(key)).toBe(false);
+    expect(__private.checkRateLimitMemory(key)).toBe(false);
   });
 
   it('valida origen permitido cuando ALLOWED_ORIGINS esta configurado', () => {
