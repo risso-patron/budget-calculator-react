@@ -34,6 +34,8 @@ import { GlobalBudgetTracker } from './components/Budget/GlobalBudgetTracker';
 // FASE UX 5: Notificaciones / Recordatorios
 import { DailyReminder } from './components/Notifications/DailyReminder';
 import { DailyOnboardingToast } from './components/Notifications/DailyOnboardingToast';
+// HÁBITO DIARIO
+import { HabitDailyCard } from './components/Dashboard/HabitDailyCard';
 import { FloatingChatButton } from './components/Shared/FloatingChatButton';
 import { FloatingChatWidget } from './components/Shared/FloatingChatWidget';
 import { Omnibar } from './components/Shared/Omnibar';
@@ -220,6 +222,15 @@ function AppContent() {
 
               {activeTab === 'resumen' && (
                 <>
+                  <HabitDailyCard
+                    currentStreak={achievements.stats.currentStreak}
+                    longestStreak={achievements.stats.longestStreak}
+                    allTransactions={allTransactions}
+                    categoryAnalysis={categoryAnalysis}
+                    monthlyComparison={{ prevTotalExpenses: monthlyComparison.prevTotalExpenses, filteredTotalExpenses }}
+                    onAddExpense={() => { setActiveTab('movimientos'); setBudgetFormKey(prev => prev + 1); }}
+                    onAddIncome={() => { setActiveTab('movimientos'); setBudgetFormKey(prev => prev + 1); }}
+                  />
                   <GlobalBudgetTracker totalExpenses={filteredTotalExpenses} />
                   <Summary totalIncome={filteredTotalIncome} totalExpenses={filteredTotalExpenses} balance={filteredBalance} creditCardDebt={creditCards.reduce((s, c) => s + c.debt, 0)} prevTotalIncome={monthlyComparison.prevTotalIncome} prevTotalExpenses={monthlyComparison.prevTotalExpenses} prevBalance={monthlyComparison.prevBalance} />
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"><BalanceDonutChart totalIncome={filteredTotalIncome} totalExpenses={filteredTotalExpenses} /><div className="bg-slate-800/10 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-6 rounded-2xl"><h3 className="text-slate-900 dark:text-white font-bold mb-4">Análisis de Gastos</h3><ExpensePieChart categoryAnalysis={categoryAnalysis} /></div></div>
