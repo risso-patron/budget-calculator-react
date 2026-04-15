@@ -56,7 +56,6 @@ import { RecurringManager } from './features/recurring/RecurringManager'
 import { CurrencyProvider } from './contexts/CurrencyContext'
 import { CurrencySelector } from './features/currency/CurrencySelector'
 import { InstallPWA } from './components/InstallPWA';
-import { AppFooter } from './components/Shared/AppFooter';
 import { BottomNav } from './components/Shared/BottomNav';
 import { filterByMonth } from './utils/calculations';
 
@@ -295,7 +294,7 @@ function AppContent() {
               {activeTab === 'planificacion' && <><CreditCardManager creditCards={creditCards} onAddCard={handleAddCard} onUpdateDebt={handleUpdateDebt} onRemoveCard={handleRemoveCard} /><BudgetManager expenses={filteredExpenses} /><RecurringManager recurring={recurring} onAdd={addRecurring} onToggle={toggleRecurring} onRemove={removeRecurring} /><GoalManager goals={goals} onAddGoal={handleAddGoal} onUpdateProgress={handleUpdateGoalProgress} onDeleteGoal={handleDeleteGoal} currentBalance={balance} /></>}
               {activeTab === 'herramientas' && <><ExportManager incomes={incomes} expenses={expenses} categoryAnalysis={categoryAnalysis} totalIncome={totalIncome} totalExpenses={totalExpenses} balance={balance} onExport={() => achievements.updateStats({ dataExported: true })} /><ImportManager onImport={handleImportTransaction} onBulkImport={handleBulkImportTransaction} /></>}
             </main>
-            <InstallPWA /> <AppFooter />
+            <InstallPWA />
           </div>
         </div>
 

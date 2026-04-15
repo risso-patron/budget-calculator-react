@@ -9,10 +9,14 @@ import {
   IdentificationCard,
   Envelope,
   Info,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Coffee,
+  Article,
+  Headset
 } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
+import BudgetLogo from '../Shared/BudgetLogo'
 
 // Selección curada de emojis para avatares Premium
 const AVATAR_OPTIONS = [
@@ -145,6 +149,7 @@ export const AccountSettingsModal = ({ isOpen, onClose, onShowAlert }) => {
             {[
               { id: 'profile', label: 'Mi Perfil', icon: User },
               { id: 'security', label: 'Seguridad', icon: ShieldCheck },
+              { id: 'soporte', label: 'Soporte', icon: Headset },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -349,6 +354,79 @@ export const AccountSettingsModal = ({ isOpen, onClose, onShowAlert }) => {
                     Info: Si usas Google OAuth, tu contraseña se gestiona en Google Account. No es necesario cambiarla aquí a menos que desees habilitar el inicio con email directo.
                   </p>
                 </div>
+              </motion.div>
+            )}
+            {activeTab === 'soporte' && (
+              <motion.div
+                key="soporte"
+                initial={{ x: 10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -10, opacity: 0 }}
+                className="space-y-8"
+              >
+                <div>
+                  <h3 className="text-3xl font-black text-slate-800 dark:text-white leading-tight uppercase tracking-tighter">Soporte</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">Información de la app y recursos de ayuda.</p>
+                </div>
+
+                {/* Sobre la app */}
+                <div className="flex flex-col items-center gap-3 py-6 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <BudgetLogo size={26} />
+                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
+                      Budget Calculator
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                    Gestión Inteligente de Finanzas Personales
+                  </p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 italic text-center max-w-xs leading-relaxed">
+                    &ldquo;La construí porque yo también quería entender a dónde iba mi plata cada mes.&rdquo;
+                  </p>
+                  <p className="flex items-center gap-1.5 text-xs text-slate-400">
+                    Hecho con{' '}
+                    <Coffee size={13} weight="fill" className="text-amber-400" />
+                    {' '}por{' '}
+                    <a
+                      href="https://www.risso-patron.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-purple-600 dark:text-purple-400 hover:underline uppercase tracking-tight"
+                    >
+                      Luis Risso Patrón
+                    </a>
+                  </p>
+                </div>
+
+                {/* Privacidad */}
+                <div className="flex items-start gap-4 p-5 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800 rounded-3xl">
+                  <ShieldCheck size={24} weight="fill" className="text-emerald-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-tight mb-1">Privacidad Absoluta</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                      Tus datos bancarios viven encriptados 100% en tu dispositivo. Nada sale a la nube.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Documentación */}
+                <div className="flex items-start gap-4 p-5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700 rounded-3xl">
+                  <Article size={24} weight="bold" className="text-slate-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight mb-2">Legal</p>
+                    <div className="flex flex-col gap-1.5 text-xs font-bold">
+                      <a href="/privacy.html" target="_blank" rel="noopener noreferrer"
+                        className="text-purple-600 dark:text-purple-400 hover:underline">
+                        Política de Privacidad →
+                      </a>
+                      <a href="/terms.html" target="_blank" rel="noopener noreferrer"
+                        className="text-purple-600 dark:text-purple-400 hover:underline">
+                        Términos de Servicio →
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
               </motion.div>
             )}
           </AnimatePresence>
