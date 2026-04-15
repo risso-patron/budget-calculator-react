@@ -1,127 +1,156 @@
 <div align="center">
 
-![Budget RP Banner](docs/screenshots/banner.png)
+# Budget RP
 
-# 🪙 Budget RP — Gestión Inteligente de Finanzas
+**Finanzas personales inteligentes — SaaS Edition**
 
-**Transforma tu salud financiera con IA, precisión quirúrgica y sincronización multi-moneda en la nube.**
+[![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react&logoColor=white&style=flat-square)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white&style=flat-square)](https://vitejs.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-ready-3178C6?logo=typescript&logoColor=white&style=flat-square)](https://www.typescriptlang.org)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3ECF8E?logo=supabase&logoColor=white&style=flat-square)](https://supabase.com)
+[![Netlify](https://img.shields.io/badge/Deployed-Netlify-00C7B7?logo=netlify&logoColor=white&style=flat-square)](https://budget-calculator-rp.netlify.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-[![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react&logoColor=white)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
-[![Supabase](https://img.shields.io/badge/Supabase-DB-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-[🌐 Ver Demo en Vivo](https://budget-calculator.netlify.app) • [🐛 Reportar Bug](https://github.com/risso-patron/budget-calculator-react/issues) • [✨ Solicitar Feature](https://github.com/risso-patron/budget-calculator-react/issues)
+[🌐 Demo en Vivo](https://budget-calculator-rp.netlify.app) · [🐛 Reportar Bug](https://github.com/risso-patron/budget-calculator-react/issues) · [✨ Solicitar Feature](https://github.com/risso-patron/budget-calculator-react/issues)
 
 </div>
 
 ---
 
-## 📖 Introducción
+## ¿Qué es Budget RP?
 
-**Budget RP** no es solo una calculadora; es un motor financiero diseñado para la era de la IA. Permite a usuarios internacionales, emprendedores y familias tomar el control total de su dinero mediante una arquitectura multi-moneda, análisis predictivo y una experiencia de usuario gamificada de primer nivel.
+Budget RP es una aplicación web de finanzas personales construida como SaaS. Pensada para quienes quieren entender a dónde va su dinero cada mes sin depender de hojas de cálculo.
 
-> [!TIP]
-> **¿Cansado de aplicaciones rígidas?** Registra un café en Pesos, tu sueldo en Dólares y tus ahorros en Euros. Nosotros nos encargamos de la matemática.
+Registra ingresos y gastos manualmente o importa directo desde tu extracto bancario (CSV / TXT). La IA categoriza automáticamente. El dashboard muestra el saldo real del mes, tendencias y hábitos.
 
----
-
-## ✨ Features Principales
-
-### 🧠 Inteligencia Artificial (AI Framework)
-*   **Predictive Insights**: Detección automática de patrones y score de salud financiera.
-*   **Smart Import**: Mapeo automático de categorías desde CSV bancarios usando Gemini/Groq.
-*   **Conversational Assistant**: Chat interactivo para consultas financieras directas.
-*   **Multi-Proveedor**: Soporte nativo para Gemini, Groq, Claude y Ollama (local).
-
-### 🌐 Arquitectura Multi-Moneda Transaccional
-*   **Registro Nativo**: Guarda cada transacción en su divisa original (150+ soportadas).
-*   **Normalización Realtime**: Dashboard unificado que convierte todo a tu moneda base automáticamente.
-*   **Visualización Dual**: Consulta el monto original y su equivalencia de referencia (≈ $0.00).
-
-### 🎯 Gestión de Presupuestos & Metas
-*   **Límites por Categoría**: Barras de progreso con alertas visuales (80% / 100%).
-*   **Notas de Contexto**: Especifica qué incluye cada límite (ej: "Servicios: Netflix, Luz").
-*   **Metas con Proyección**: Algoritmo que calcula si llegarás a tiempo a tu objetivo de ahorro.
-
-### 🎮 Gamificación & Social
-*   **Logros (24)**: Sistema de medallas y niveles por uso consistente.
-*   **Espacios Compartidos**: Sincronización en tiempo real para parejas o equipos mediante Supabase Realtime.
+> *"La construí porque yo también quería entender a dónde iba mi plata cada mes."*
 
 ---
 
-## 🛠️ Tech Stack Moderno
+## Funcionalidades
+
+### Registro y gestión
+- Ingreso manual de gastos e ingresos con categorías
+- Edición de cualquier transacción con tap directo en la lista
+- Eliminación individual y selección múltiple con acción masiva
+- Filtros por mes, año, categoría y búsqueda por texto
+
+### Importación bancaria
+- Importa extractos CSV o TXT directamente desde el banco
+- Detección automática de columnas (fecha, descripción, monto, débito/crédito)
+- Soporte para formatos Banco General Panamá y bancos con separador `;` o `,`
+- Categorización automática con IA tras el import
+- Perfiles guardados por banco para reimportaciones futuras
+
+### Dashboard e insights
+- Saldo del mes: ingresos vs. egresos en tiempo real
+- Mayor categoría de gasto con porcentaje sobre el total
+- Tendencia mensual (% de mejora o empeoramiento vs. mes anterior)
+- Racha de días con registros consecutivos
+
+### Planificación
+- Presupuesto global mensual con barra de progreso
+- Metas de ahorro con proyección de cumplimiento
+- Tarjetas de crédito con deuda y fecha de cierre
+
+### Gamificación
+- 24 logros desbloqueables por uso consistente
+- Puntos y niveles
+- Habits diarios y seguimiento de rachas
+
+### Multi-moneda
+- Registro en moneda original de cada transacción (150+ divisas)
+- Conversión automática a moneda base en el dashboard
+- Visualización dual: monto original + equivalencia
+
+### IA integrada
+- Categorización automática de transacciones importadas
+- Chat con asistente financiero contextual
+- Soporte multi-proveedor: Gemini, Groq, Claude, Ollama (local)
+
+---
+
+## Tech Stack
 
 | Capa | Tecnologías |
 | :--- | :--- |
-| **Frontend** | React 19, TailwindCSS, Framer Motion, Recharts, Chart.js |
-| **Backend** | Supabase (PostgreSQL, Auth, Realtime, RLS) |
-| **Infraestructura** | Netlify (Hosting + Serverless Functions para IA) |
-| **Utilidades** | Decimal.js (Precisión), jsPDF, PapaParse, Lottie |
+| **Frontend** | React 19, TailwindCSS 3, Framer Motion, Recharts |
+| **Auth / DB** | Supabase (PostgreSQL, Auth, RLS, Realtime) |
+| **Hosting** | Netlify (CDN + Serverless Functions para proxies de IA) |
+| **Build** | Vite 5, ESLint, Vitest |
+| **Utilidades** | Decimal.js, PapaParse, jsPDF, Lottie |
 
 ---
 
-## 📋 Requisitos e Instalación
+## Instalación local
 
-### 📦 Requisitos Previos
-*   **Node.js** 18 o superior.
-*   **npm** 9 o superior.
-*   Cuenta en **Supabase** (Free Tier disponible).
+**Requisitos:** Node.js 18+, npm 9+, cuenta Supabase (free tier).
 
-### 🚀 Instalación Rápida
+```bash
+# 1. Clonar
+git clone https://github.com/risso-patron/budget-calculator-react.git
+cd budget-calculator-react
 
-1.  **Clonar y Entrar**
-    ```bash
-    git clone https://github.com/risso-patron/budget-calculator-react.git
-    cd budget-calculator-react
-    ```
+# 2. Instalar dependencias
+npm install
 
-2.  **Instalar y Configurar**
-    ```bash
-    npm install
-    cp .env.example .env
-    # Edita .env con tus credenciales de Supabase
-    ```
+# 3. Configurar variables de entorno
+cp .env.example .env
+# Edita .env con tus credenciales
+```
 
-3.  **Lanzar**
-    ```bash
-    npm run dev
-    # Abre http://localhost:5173
-    ```
+**.env mínimo:**
+```env
+VITE_SUPABASE_URL=https://tuproyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu_anon_key
+```
 
-> **Variables mínimas requeridas** para correr localmente:
-> ```
-> VITE_SUPABASE_URL=https://tuproyecto.supabase.co
-> VITE_SUPABASE_ANON_KEY=tu_anon_key
-> ```
-> La IA es opcional — sin API keys funciona en modo offline con datos locales.
+```bash
+# 4. Levantar en desarrollo
+npm run dev
+# → http://localhost:5173
+```
+
+> La IA es opcional. Sin API keys la app funciona en modo local con todas las funciones excepto categorización automática y chat.
 
 ---
 
-## 🔒 Seguridad
+## Scripts disponibles
 
-Este repositorio fue auditado en abril 2026. Se verificó:
-- Sin credenciales ni datos sensibles en el código fuente o historial de Git
-- API keys de IA gestionadas exclusivamente vía Netlify Environment Variables (nunca en el bundle cliente)
+| Comando | Descripción |
+| :--- | :--- |
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Build de producción |
+| `npm run preview` | Preview del build |
+| `npm run test` | Tests con Vitest |
+| `npm run lint` | Linter ESLint |
+
+---
+
+## Seguridad
+
+Auditado en **abril 2026**:
+- Sin credenciales ni datos sensibles en código fuente o historial Git
+- API keys de IA gestionadas vía variables de entorno en Netlify (nunca en el bundle cliente)
 - Rate limiting y validación de origen en todas las Netlify Functions
-- RLS (Row Level Security) activo en Supabase
+- RLS (Row Level Security) activo en todas las tablas de Supabase
+- Datos bancarios del usuario encriptados y almacenados localmente en el dispositivo
 
 ---
 
-## 🙋 Soporte y Contribución
+## Contribución
 
-Si encuentras un error o tienes una idea brillante:
-1.  Revisa los [Issues](https://github.com/risso-patron/budget-calculator-react/issues).
-2.  Abre un [Pull Request](https://github.com/risso-patron/budget-calculator-react/pulls) si quieres colaborar.
-3.  ¡Danos una ⭐ estrella en GitHub si el proyecto te es útil!
+1. Revisa los [Issues abiertos](https://github.com/risso-patron/budget-calculator-react/issues)
+2. Haz fork del repositorio y crea una rama descriptiva
+3. Abre un [Pull Request](https://github.com/risso-patron/budget-calculator-react/pulls) con descripción clara del cambio
 
 ---
 
 <div align="center">
 
-**Desarrollado con ❤️ por [Jorge Luis Risso Patrón](https://github.com/risso-patron)**
-*Haciendo las finanzas personales inteligentes y accesibles.*
+Desarrollado por **[Jorge Luis Risso Patrón](https://github.com/risso-patron)** · Panamá 🇵🇦
 
-[Volver Arriba](#-budget-rp--gestión-inteligente-de-finanzas)
+[↑ Volver arriba](#budget-rp)
 
 </div>
+
