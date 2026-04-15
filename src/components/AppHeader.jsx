@@ -52,7 +52,7 @@ export function AppHeader({
       <div className="flex justify-between items-center gap-4 mb-4 sm:mb-8">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl sm:text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-tight">
-            Calculadora <span className="text-primary-600">RP</span>
+            Budget <span className="text-primary-600">RP</span>
           </h1>
           <p className="hidden sm:block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2">
             {quote}
