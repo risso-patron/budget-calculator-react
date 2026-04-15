@@ -15,7 +15,6 @@ export const TransactionItem = ({ transaction, type, onRemove, onEdit, index, is
 
   const isIncome = type === 'income';
   const category = EXPENSE_CATEGORIES.find(cat => cat.value === transaction.category);
-  const icon = isIncome ? '💰' : (category?.icon || '💳');
   
   const txCurrency = transaction.currency || 'USD';
   const hasDifferentCurrency = txCurrency !== selectedCurrency;
@@ -35,96 +34,75 @@ export const TransactionItem = ({ transaction, type, onRemove, onEdit, index, is
 
   return (
     <>
-      <div 
+      <div
         className={`
-          group p-4 rounded-lg border-2 transition-all duration-300
-          ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
-          ${isIncome 
-            ? 'border-green-200 bg-green-50 hover:bg-green-100 dark:border-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30' 
-            : 'border-red-200 bg-red-50 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+          group relative flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-200
+          ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100'}
+          ${isSelected
+            ? 'border-primary-400/60 bg-primary-50/50 dark:bg-primary-900/20'
+            : 'border-slate-200/60 dark:border-slate-700/50 bg-white dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-600'
           }
-          hover:shadow-md hover:scale-102
         `}
-        style={{ 
-          animationDelay: `${index * 50}ms`,
-          animation: 'fadeInSlide 0.3s ease-out forwards'
-        }}
+        style={{ animationDelay: `${index * 30}ms` }}
       >
-        <div className="flex items-start justify-between gap-3">
-          {/* Checkbox + Icono y contenido */}
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            {onToggleSelect && (
-              <div className="pt-1 flex-shrink-0">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={(e) => onToggleSelect(transaction.id, e.target.checked)}
-                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 dark:bg-gray-800 transition-all cursor-pointer shadow-sm hover:scale-110"
-                />
+        {/* Checkbox */}
+        {onToggleSelect && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onToggleSelect(transaction.id, e.target.checked)}
+            className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300 dark:border-slate-600 dark:bg-slate-700 shrink-0 cursor-pointer"
+          />
+        )}
+
+        {/* Ícono tipo */}
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm
+          ${isIncome ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-rose-100 dark:bg-rose-900/40'}`}>
+          <svg className={`w-4 h-4 ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {isIncome
+              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            }
+          </svg>
+        </div>
+
+        {/* Descripción + meta — toque abre edición */}
+        <button
+          onClick={() => setShowEditModal(true)}
+          className="flex-1 min-w-0 text-left"
+          aria-label={`Editar: ${transaction.description}`}
+        >
+          <p className="text-sm font-semibold text-slate-800 dark:text-white truncate leading-tight">
+            {transaction.description}
+          </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1.5">
+            <span>{formatDate(transaction.date)}</span>
+            {!isIncome && transaction.category && (
+              <><span>·</span><span>{transaction.category}</span></>
+            )}
+          </p>
+        </button>
+
+        {/* Monto + botón eliminar */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className={`text-sm font-bold ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
+            {isIncome ? '+' : '-'}{formatCurrency(transaction.amount, txCurrency)}
+            {hasDifferentCurrency && (
+              <div className="text-[10px] font-medium text-slate-400 leading-none mt-0.5 text-right">
+                ≈ {formatCurrency(convertCurrency(transaction.amount, txCurrency, selectedCurrency), selectedCurrency)}
               </div>
             )}
-            <span className="text-2xl flex-shrink-0" aria-hidden="true">
-              {icon}
-            </span>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-gray-800 dark:text-white truncate" title={transaction.description}>
-                {transaction.description}
-              </h4>
-              <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-gray-600 dark:text-gray-400">
-                <time dateTime={transaction.date}>
-                  📅 {formatDate(transaction.date)}
-                </time>
-                {!isIncome && transaction.category && (
-                  <>
-                    <span aria-hidden="true">•</span>
-                    <span className="px-2 py-0.5 bg-white/50 dark:bg-gray-800/50 rounded-full">
-                      {transaction.category}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
           </div>
-
-          {/* Monto y acciones */}
-          <div className="flex flex-col items-end gap-2">
-            <div 
-              className={`text-lg font-bold flex flex-col items-end ${
-                isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-              }`}
-            >
-              <span>{isIncome ? '+' : '-'}{formatCurrency(transaction.amount, txCurrency)}</span>
-              {hasDifferentCurrency && (
-                <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 line-clamp-1 leading-none mt-0.5">
-                  (≈ {formatCurrency(convertCurrency(transaction.amount, txCurrency, selectedCurrency), selectedCurrency)})
-                </span>
-              )}
-            </div>
-            
-            {/* Botones de acción */}
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="p-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
-                aria-label={`Editar ${isIncome ? 'ingreso' : 'gasto'}`}
-                title="Editar"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button
-                onClick={handleDelete}
-                className="p-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
-                aria-label={`Eliminar ${isIncome ? 'ingreso' : 'gasto'}`}
-                title="Eliminar"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={handleDelete}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+            aria-label="Eliminar"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
       </div>
 
