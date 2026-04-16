@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   UsersThree, Plus, SignOut, Copy, Check, ArrowRight,
@@ -11,10 +12,10 @@ import { NumericFormat } from 'react-number-format';
 import { sanitizeText, sanitizeCategory } from '../../utils/sanitize';
 
 /** Formatea fecha YYYY-MM-DD a string legible */
-function fmtDate(str) {
+function fmtDate(str, locale = undefined) {
   if (!str) return '';
   const [y, m, d] = str.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('es-PA', {
+  return new Date(y, m - 1, d).toLocaleDateString(locale, {
     day: 'numeric', month: 'short',
   });
 }
@@ -46,6 +47,7 @@ export const SharedSpaceManager = ({
   currentUser,
 }) => {
   const [view, setView]   = useState('create'); // 'create' | 'join'
+  const { i18n } = useTranslation();
   const [spaceName, setSpaceName] = useState('');
   const [inviteInput, setInviteInput] = useState('');
   const [showTxForm, setShowTxForm] = useState(false);
@@ -390,7 +392,7 @@ export const SharedSpaceManager = ({
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{tx.description}</p>
-                <p className="text-xs text-gray-400">{fmtDate(tx.date?.split('T')[0])}</p>
+                <p className="text-xs text-gray-400">{fmtDate(tx.date?.split('T')[0], i18n.language)}</p>
               </div>
               <span className={`text-sm font-bold shrink-0
                 ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>

@@ -9,7 +9,10 @@
   },
   "header": {
     "greeting": "Hola, {{name}} 👋",
-    "search_placeholder": "Buscar..."
+    "search_placeholder": "Buscar...",
+    "all": "Todo",
+    "year": "Año",
+    "month": "Mes"
   },
   "sidebar": {
     "panel": "Panel Control",
@@ -101,6 +104,20 @@
     "loading": "Cargando...",
     "install": "Instalar Saldo",
     "install_sub": "Usa la app offline o como app nativa."
+  },
+  "goals": {
+    "projection_on_track": "📈 Vas por buen camino! A este ritmo (${{rate}}/día), alcanzarás tu meta el {{date}}"
+  },
+  "budgets": {
+    "monthly_limits": "Límites de gasto mensuales"
+  },
+  "app": {
+    "delete_goal_title": "Eliminar meta",
+    "delete_goal_confirm": "¿Seguro?",
+    "goal_deleted": "Meta eliminada",
+    "clear_all_title": "Limpiar todo",
+    "clear_all_message": "¿Seguro de eliminar {{count}} transacciones?",
+    "clear_all_confirm": "Sí, eliminar todo"
   },
   "errors": {
     "invalid_amount": "Por favor ingresa una cantidad válida mayor a 0",

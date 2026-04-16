@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, X } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -62,6 +63,7 @@ import { filterByMonth } from './utils/calculations';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const [showAuth, setShowAuth] = useState(false);
   const [showMigration, setShowMigration] = useState(false);
   const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
@@ -137,7 +139,7 @@ function AppContent() {
   const handleRemoveCard = (cardId) => { setCreditCards(creditCards.filter(card => card.id !== cardId)); showAlert('success', 'Tarjeta eliminada'); };
   const handleAddGoal = (goal) => { setGoals([...goals, goal]); showAlert('success', `Meta "${goal.name}" creada`); return true; };
   const handleUpdateGoalProgress = (goalId, newAmount) => setGoals(goals.map(goal => goal.id === goalId ? { ...goal, currentAmount: newAmount } : goal));
-  const handleDeleteGoal = (goalId) => openConfirm({ title: 'Eliminar meta', message: '¿Seguro?', onConfirm: () => { setGoals(goals.filter(goal => goal.id !== goalId)); showAlert('success', 'Meta eliminada'); closeConfirm(); }});
+  const handleDeleteGoal = (goalId) => openConfirm({ title: t('app.delete_goal_title'), message: t('app.delete_goal_confirm'), onConfirm: () => { setGoals(goals.filter(goal => goal.id !== goalId)); showAlert('success', t('app.goal_deleted')); closeConfirm(); }});
 
   const handleAddIncome = (description, amount, date, currency) => {
     const result = addIncome(description, amount, date, currency);
@@ -159,7 +161,7 @@ function AppContent() {
   const handleBulkImportTransaction = async (transactions) => addBulkTransactions(transactions);
 
   const handleClearAllTransactions = () => openConfirm({
-    title: 'Limpiar todo', message: `¿Seguro de eliminar ${incomes.length + expenses.length} transacciones?`, confirmLabel: 'Sí, eliminar todo', onConfirm: () => { clearAll(); closeConfirm(); }
+    title: t('app.clear_all_title'), message: t('app.clear_all_message', { count: incomes.length + expenses.length }), confirmLabel: t('app.clear_all_confirm'), onConfirm: () => { clearAll(); closeConfirm(); }
   });
 
   const handleQuickAddAction = () => {

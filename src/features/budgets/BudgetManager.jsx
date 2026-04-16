@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '../../hooks/useLocalStorage'
 import { EXPENSE_CATEGORIES } from '../../constants/categories'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -10,6 +11,7 @@ const BUDGETS_KEY = 'budget_calculator_budgets'
  * Inspirado en MonAi: "Pon límites. Mantente al día."
  */
 export function BudgetManager({ expenses }) {
+  const { t, i18n } = useTranslation()
   const [budgets, setBudgets] = useLocalStorage(BUDGETS_KEY, {})
   const [editingCategory, setEditingCategory] = useState(null)
   const [inputValue, setInputValue] = useState('')
@@ -83,7 +85,7 @@ export function BudgetManager({ expenses }) {
   }
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat('es-PA', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount || 0)
+    new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount || 0)
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
@@ -94,7 +96,7 @@ export function BudgetManager({ expenses }) {
             🎯 Presupuestos por Categoría
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {new Date().toLocaleString('es-PA', { month: 'long', year: 'numeric' })} — Límites de gasto mensuales
+            {new Date().toLocaleString(i18n.language, { month: 'long', year: 'numeric' })} — {t('budgets.monthly_limits')}
           </p>
         </div>
       </div>

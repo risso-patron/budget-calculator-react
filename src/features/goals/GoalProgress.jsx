@@ -1,11 +1,13 @@
 import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Componente para visualizar el progreso de una meta individual
  */
 export const GoalProgress = ({ goal, projection, onUpdate, onDelete }) => {
+  const { t, i18n } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [newAmount, setNewAmount] = useState(goal.currentAmount);
 
@@ -135,7 +137,7 @@ export const GoalProgress = ({ goal, projection, onUpdate, onDelete }) => {
           </label>
           <div className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
             <span className="text-sm font-medium dark:text-gray-200">
-              {new Date(goal.targetDate).toLocaleDateString('es-ES', {
+              {new Date(goal.targetDate).toLocaleDateString(i18n.language, {
                 day: '2-digit',
                 month: 'short',
                 year: 'numeric',
@@ -155,8 +157,10 @@ export const GoalProgress = ({ goal, projection, onUpdate, onDelete }) => {
         <div className={`text-xs p-2 rounded ${projection.isOnTrack ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
           {projection.isOnTrack ? (
             <p>
-              📈 Vas por buen camino! A este ritmo (${projection.dailyRate.toFixed(2)}/día),
-              alcanzarás tu meta el {projection.projectedDate.toLocaleDateString('es-ES')}
+              {t('goals.projection_on_track', {
+                rate: projection.dailyRate.toFixed(2),
+                date: projection.projectedDate.toLocaleDateString(i18n.language),
+              })}
             </p>
           ) : (
             <p>

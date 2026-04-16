@@ -5,6 +5,7 @@ import { CurrencySelector } from '../features/currency/CurrencySelector'
 import BudgetLogo from './Shared/BudgetLogo'
 import { useAuth } from '../contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
+import { LanguageSelector } from './Shared/LanguageSelector'
 
 const TABS = [
   { id: 'resumen',       labelKey: 'nav.home' },
@@ -34,7 +35,7 @@ export function AppHeader({
   transactionCount,
 }) {
   const { user } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const firstName = (user?.user_metadata?.full_name || user?.email || '').split(/[\s@]/)[0]
 
   return (
@@ -51,6 +52,7 @@ export function AppHeader({
         </button>
         <div className="flex items-center gap-2 text-white">
           <div className="scale-90 origin-right"><CurrencySelector /></div>
+          <LanguageSelector compact />
           <ThemeToggle />
           <ProfileMenu onClearAll={onClearAll} transactionCount={transactionCount} onNavigate={setActiveTab} condensed={true} />
         </div>
@@ -106,13 +108,13 @@ export function AppHeader({
       {availableYears.length > 0 && (
         <div className="flex flex-col gap-2 mt-4 sm:mt-6">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar-sidebar">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0">Año</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0">{t('header.year')}</span>
             <div className="flex gap-1 whitespace-nowrap">
               <button
                 onClick={() => { setSelectedYear(null); setSelectedMonth(null) }}
                 className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase transition-all ${!selectedYear ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                Todo
+                {t('header.all')}
               </button>
               {availableYears.map(y => (
                 <button
@@ -128,16 +130,16 @@ export function AppHeader({
 
           {selectedYear && availableMonths.length > 0 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar-sidebar">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0">Mes</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0">{t('header.month')}</span>
               <div className="flex gap-1 whitespace-nowrap">
                 <button
                   onClick={() => setSelectedMonth(null)}
                   className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase transition-all ${selectedMonth === null ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
-                  Todo
+                  {t('header.all')}
                 </button>
                 {availableMonths.map(m => {
-                  const label = new Intl.DateTimeFormat('es', { month: 'short' }).format(new Date(selectedYear, m))
+                  const label = new Intl.DateTimeFormat(i18n.language, { month: 'short' }).format(new Date(selectedYear, m))
                   return (
                     <button
                       key={m}

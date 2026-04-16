@@ -9,7 +9,10 @@
   },
   "header": {
     "greeting": "Hello, {{name}} 👋",
-    "search_placeholder": "Search..."
+    "search_placeholder": "Search...",
+    "all": "All",
+    "year": "Year",
+    "month": "Month"
   },
   "sidebar": {
     "panel": "Control Panel",
@@ -101,6 +104,20 @@
     "loading": "Loading...",
     "install": "Install Saldo",
     "install_sub": "Use the app offline or as a native app."
+  },
+  "goals": {
+    "projection_on_track": "📈 On track! At this rate (${{rate}}/day), you'll reach your goal on {{date}}"
+  },
+  "budgets": {
+    "monthly_limits": "Monthly spending limits"
+  },
+  "app": {
+    "delete_goal_title": "Delete goal",
+    "delete_goal_confirm": "Are you sure?",
+    "goal_deleted": "Goal deleted",
+    "clear_all_title": "Clear all",
+    "clear_all_message": "Delete {{count}} transactions?",
+    "clear_all_confirm": "Yes, delete all"
   },
   "errors": {
     "invalid_amount": "Please enter a valid amount greater than 0",

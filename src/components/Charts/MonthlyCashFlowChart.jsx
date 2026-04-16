@@ -8,6 +8,7 @@ import {
 import { ChartContainer } from './ChartContainer';
 import { transformToMonthlyCashFlow, hasChartData } from '../../utils/chartHelpers';
 import { formatCurrency } from '../../utils/formatters';
+import { useTranslation } from 'react-i18next';
 
 const CashFlowTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null;
@@ -33,7 +34,8 @@ const CashFlowTooltip = ({ active, payload, label }) => {
  * Flujo de Caja Mensual — Ingresos / Gastos / Ahorro con tasa de ahorro %
  */
 export const MonthlyCashFlowChart = ({ incomes, expenses, months = 6 }) => {
-  const data = transformToMonthlyCashFlow(incomes, expenses, months);
+  const { i18n } = useTranslation();
+  const data = transformToMonthlyCashFlow(incomes, expenses, months, i18n.language);
   const isEmpty = !hasChartData(incomes, expenses);
   const hasAnyData = data.some(d => d.ingresos > 0 || d.gastos > 0);
 

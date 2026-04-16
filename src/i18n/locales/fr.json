@@ -9,7 +9,10 @@
   },
   "header": {
     "greeting": "Bonjour, {{name}} 👋",
-    "search_placeholder": "Rechercher..."
+    "search_placeholder": "Rechercher...",
+    "all": "Tout",
+    "year": "Année",
+    "month": "Mois"
   },
   "sidebar": {
     "panel": "Tableau de bord",
@@ -101,6 +104,20 @@
     "loading": "Chargement...",
     "install": "Installer Saldo",
     "install_sub": "Utilisez l'app hors ligne ou comme app native."
+  },
+  "goals": {
+    "projection_on_track": "📈 Bonne progression ! À ce rythme ({{rate}} $/jour), vous atteindrez votre objectif le {{date}}"
+  },
+  "budgets": {
+    "monthly_limits": "Limites de dépenses mensuelles"
+  },
+  "app": {
+    "delete_goal_title": "Supprimer l'objectif",
+    "delete_goal_confirm": "Êtes-vous sûr ?",
+    "goal_deleted": "Objectif supprimé",
+    "clear_all_title": "Tout effacer",
+    "clear_all_message": "Supprimer {{count}} transactions ?",
+    "clear_all_confirm": "Oui, tout supprimer"
   },
   "errors": {
     "invalid_amount": "Veuillez entrer un montant valide supérieur à 0",

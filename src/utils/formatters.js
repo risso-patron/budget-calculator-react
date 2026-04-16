@@ -32,7 +32,7 @@ export const formatCurrency = (amount, currencyCode = 'USD') => {
  * @param {Object} options - Opciones de formato (opcional)
  * @returns {string} - Fecha formateada (ej: "3 de Nov, 2025")
  */
-export const formatDate = (date, options = {}) => {
+export const formatDate = (date, options = {}, locale = undefined) => {
   const dateObj = date instanceof Date ? date : new Date(date);
   
   if (isNaN(dateObj.getTime())) {
@@ -45,7 +45,7 @@ export const formatDate = (date, options = {}) => {
     year: 'numeric',
   };
 
-  return new Intl.DateTimeFormat('es-ES', { ...defaultOptions, ...options }).format(dateObj);
+  return new Intl.DateTimeFormat(locale, { ...defaultOptions, ...options }).format(dateObj);
 };
 
 /**

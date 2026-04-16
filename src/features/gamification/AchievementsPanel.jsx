@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import {
@@ -58,6 +59,7 @@ const ACHIEVEMENT_COLOR = {
  * Tarjeta individual de logro
  */
 const AchievementCard = ({ achievement, isUnlocked, unlockedAt }) => {
+  const { i18n } = useTranslation();
   return (
     <div
       className={`
@@ -109,7 +111,7 @@ const AchievementCard = ({ achievement, isUnlocked, unlockedAt }) => {
       {/* Fecha */}
       {isUnlocked && unlockedAt && (
         <div className="mt-1 text-[9px] text-gray-400">
-          {new Date(unlockedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+          {new Date(unlockedAt).toLocaleDateString(i18n.language, { day: '2-digit', month: 'short' })}
         </div>
       )}
 

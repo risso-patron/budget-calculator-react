@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RepeatOnce, RepeatIcon, Plus, Trash, ToggleLeft, ToggleRight,
   ArrowsClockwise } from '@phosphor-icons/react';
@@ -21,10 +22,10 @@ const FREQ_LABELS = { daily: 'Cada día', weekly: 'Semanal', biweekly: 'Quincena
 /**
  * Formatea 'YYYY-MM-DD' a string legible en español
  */
-function fmtDate(str) {
+function fmtDate(str, locale = undefined) {
   if (!str) return '';
   const [y, m, d] = str.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('es-PA', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(y, m - 1, d).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 const EMPTY_FORM = {
@@ -41,6 +42,7 @@ const EMPTY_FORM = {
  * Permite crear, activar/pausar y eliminar reglas recurrentes.
  */
 export const RecurringManager = ({ recurring, onAdd, onToggle, onRemove }) => {
+  const { i18n } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
@@ -271,7 +273,7 @@ export const RecurringManager = ({ recurring, onAdd, onToggle, onRemove }) => {
                   {rule.description}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {FREQ_LABELS[rule.frequency]} · próx. {fmtDate(rule.nextDue)}
+                  {FREQ_LABELS[rule.frequency]} · próx. {fmtDate(rule.nextDue, i18n.language)}
                 </p>
               </div>
 

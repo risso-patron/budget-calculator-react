@@ -222,7 +222,7 @@ export const hasChartData = (incomes, expenses) => {
  * Flujo de caja mensual — últimos N meses
  * Retorna [{ mes, ingresos, gastos, ahorro, tasaAhorro }]
  */
-export const transformToMonthlyCashFlow = (incomes = [], expenses = [], months = 6) => {
+export const transformToMonthlyCashFlow = (incomes = [], expenses = [], months = 6, locale = undefined) => {
   const now = new Date();
   const result = [];
 
@@ -230,7 +230,7 @@ export const transformToMonthlyCashFlow = (incomes = [], expenses = [], months =
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const year  = d.getFullYear();
     const month = d.getMonth();
-    const label = d.toLocaleDateString('es-PA', { month: 'short', year: '2-digit' });
+    const label = d.toLocaleDateString(locale, { month: 'short', year: '2-digit' });
 
     const ingresosMes = incomes
       .filter(t => { const td = new Date(t.date); return td.getFullYear() === year && td.getMonth() === month; })

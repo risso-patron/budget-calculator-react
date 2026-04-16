@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import PropTypes from 'prop-types'
 import {
   AreaChart,
@@ -20,6 +21,7 @@ import {
  * - Rango de confianza (sombreado)
  */
 export const PredictiveChart = ({ historicalData, predictions, loading }) => {
+  const { i18n } = useTranslation()
   // Preparar datos para el gráfico
   const chartData = useMemo(() => {
     if (!historicalData || historicalData.length === 0) return []
@@ -58,7 +60,7 @@ export const PredictiveChart = ({ historicalData, predictions, loading }) => {
             <div className="flex items-center justify-between gap-4 mb-1">
               <span className="text-sm text-purple-600 font-medium">Predicción:</span>
               <span className="font-bold text-purple-600">
-                ${data.total?.toLocaleString('es-PA', { minimumFractionDigits: 2 })}
+                ${data.total?.toLocaleString(i18n.language, { minimumFractionDigits: 2 })}
               </span>
             </div>
             {data.rangeMin && data.rangeMax && (
@@ -71,7 +73,7 @@ export const PredictiveChart = ({ historicalData, predictions, loading }) => {
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm text-gray-600">Total:</span>
             <span className="font-bold text-gray-900">
-              ${data.total?.toLocaleString('es-PA', { minimumFractionDigits: 2 })}
+              ${data.total?.toLocaleString(i18n.language, { minimumFractionDigits: 2 })}
             </span>
           </div>
         )}
