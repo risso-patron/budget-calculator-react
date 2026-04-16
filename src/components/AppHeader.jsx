@@ -2,6 +2,8 @@ import { MagnifyingGlass } from '@phosphor-icons/react'
 import { ThemeToggle } from './Shared/ThemeToggle'
 import { ProfileMenu } from './Auth/ProfileMenu'
 import { CurrencySelector } from '../features/currency/CurrencySelector'
+import BudgetLogo from './Shared/BudgetLogo'
+import { useAuth } from '../contexts/AuthContext'
 
 const TABS = [
   { id: 'resumen',       label: 'Inicio' },
@@ -9,6 +11,7 @@ const TABS = [
   { id: 'graficos',      label: 'Tendencias' },
   { id: 'planificacion', label: 'Planificación' },
   { id: 'herramientas',  label: 'Más' },
+  { id: 'cuenta',        label: 'Mi Cuenta' },
 ]
 
 /**
@@ -29,6 +32,9 @@ export function AppHeader({
   onClearAll,
   transactionCount,
 }) {
+  const { user } = useAuth()
+  const firstName = (user?.user_metadata?.full_name || user?.email || '').split(/[\s@]/)[0]
+
   return (
     <header className="relative z-[100] bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl rounded-3xl sm:rounded-4xl px-4 sm:px-8 pt-5 sm:pt-8 pb-4 sm:pb-6 mb-6 sm:mb-10 shadow-glass border border-white/40 dark:border-white/5">
 
@@ -51,9 +57,17 @@ export function AppHeader({
       {/* Título + controles tablet */}
       <div className="flex justify-between items-center gap-4 mb-4 sm:mb-8">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-tight">
-            Budget <span className="text-primary-600">RP</span>
-          </h1>
+          <div className="flex items-center gap-3">
+            <BudgetLogo size={36} />
+            <div>
+              <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">
+                Hola, {firstName} 👋
+              </p>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-slate-900 dark:text-white leading-tight">
+                Saldo
+              </h1>
+            </div>
+          </div>
           <p className="hidden sm:block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2">
             {quote}
           </p>
