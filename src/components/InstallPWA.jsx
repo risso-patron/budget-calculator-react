@@ -52,7 +52,7 @@ export const InstallPWA = () => {
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-sm">
       <div className="flex items-center justify-between gap-4 bg-slate-800/90 backdrop-blur-md border border-purple-500/30 p-4 rounded-2xl shadow-2xl shadow-purple-900/40 animate-slide-up">
         <div className="flex flex-col">
-          <span className="text-white font-bold text-sm">Instalar Budget RP</span>
+          <span className="text-white font-bold text-sm">Instalar Saldo</span>
           <span className="text-gray-400 text-xs">Usa la app offline o como app nativa.</span>
         </div>
         

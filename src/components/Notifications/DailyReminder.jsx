@@ -40,7 +40,7 @@ export const DailyReminder = () => {
     if (lastNotifiedDate === today) return;
 
     if (Notification.permission === 'granted') {
-      const notif = new Notification('Budget RP 💸', {
+      const notif = new Notification('Saldo 💸', {
         body: '¿Gastaste algo hoy? Regístralo en 10 segundos y mantén tu racha intacta.',
         icon: '/favicon.svg', // Icono de la marca
         badge: '/favicon.svg',

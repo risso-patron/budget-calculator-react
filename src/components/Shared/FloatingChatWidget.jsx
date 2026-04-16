@@ -121,7 +121,7 @@ export const FloatingChatWidget = ({ isOpen, onClose, context }) => {
               <div>
                 <h3 className="font-black text-sm leading-tight">Asistente IA</h3>
                 <p className="text-white/70 text-[10px] font-medium flex items-center gap-1">
-                  <Sparkle size={9} weight="fill" /> En línea · Budget RP
+                  <Sparkle size={9} weight="fill" /> En línea · Saldo
                 </p>
               </div>
             </div>

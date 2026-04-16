@@ -41,11 +41,11 @@ export const Sidebar = ({
           </div>
           <div className="flex flex-col leading-none">
             <h2 className="text-xl font-black tracking-tighter uppercase whitespace-nowrap">
-              Budget <span className="text-primary-500">RP</span>
+              Saldo
             </h2>
             <div className="flex items-center gap-1.5 mt-1.5">
               <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                SaaS Edition
+                Finanzas
               </span>
               <CloudCheck size={12} weight="fill" className="text-emerald-500" />
             </div>

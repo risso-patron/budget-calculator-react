@@ -213,7 +213,7 @@ export const Omnibar = ({ isOpen, onClose, allTransactions = [], onNavigate }) =
             <span className="flex items-center gap-1"><Keyboard size={16} /> Navegar: Flechas</span>
             <span className="flex items-center gap-1"><Keyboard size={16} /> Seleccionar: Enter</span>
           </div>
-          <span>SaaS Edition</span>
+          <span>Saldo · Finanzas Personales</span>
         </div>
 
       </div>
