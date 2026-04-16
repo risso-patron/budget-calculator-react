@@ -78,6 +78,8 @@ CREATE POLICY "Users can delete own transactions"
 -- =====================================================
 CREATE TABLE IF NOT EXISTS public.user_profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT,
+    email TEXT,
     full_name TEXT,
     avatar_url TEXT,
     currency TEXT DEFAULT 'USD',
