@@ -117,7 +117,8 @@
     "goal_deleted": "Objectif supprimé",
     "clear_all_title": "Tout effacer",
     "clear_all_message": "Supprimer {{count}} transactions ?",
-    "clear_all_confirm": "Oui, tout supprimer"
+    "clear_all_confirm": "Oui, tout supprimer",
+    "welcome_banner": "Bienvenue — <1>{{count}}</1> transactions prêtes."
   },
   "errors": {
     "invalid_amount": "Veuillez entrer un montant valide supérieur à 0",

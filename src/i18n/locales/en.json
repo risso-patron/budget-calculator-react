@@ -117,7 +117,8 @@
     "goal_deleted": "Goal deleted",
     "clear_all_title": "Clear all",
     "clear_all_message": "Delete {{count}} transactions?",
-    "clear_all_confirm": "Yes, delete all"
+    "clear_all_confirm": "Yes, delete all",
+    "welcome_banner": "Welcome — <1>{{count}}</1> transactions ready."
   },
   "errors": {
     "invalid_amount": "Please enter a valid amount greater than 0",

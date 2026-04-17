@@ -233,7 +233,7 @@ function AppContent() {
             {welcomeBanner !== null && (
               <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-4 py-2.5 mb-6 animate-fade-in-slide">
                 <CheckCircle size={18} className="text-emerald-500" />
-                <p className="text-[11px] sm:text-sm font-bold text-emerald-800 dark:text-emerald-300">Bienvenido — <span className="text-emerald-600 dark:text-emerald-400">{welcomeBanner}</span> transacciones listas.</p>
+                <p className="text-[11px] sm:text-sm font-bold text-emerald-800 dark:text-emerald-300">{t('app.welcome_banner', { count: welcomeBanner, 1: (chunks) => <span className="text-emerald-600 dark:text-emerald-400">{chunks}</span> })}</p>
                 <button onClick={() => setWelcomeBanner(null)} className="ml-auto text-emerald-400 p-1"><X size={14} /></button>
               </div>
             )}

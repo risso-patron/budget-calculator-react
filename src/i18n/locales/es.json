@@ -117,7 +117,8 @@
     "goal_deleted": "Meta eliminada",
     "clear_all_title": "Limpiar todo",
     "clear_all_message": "¿Seguro de eliminar {{count}} transacciones?",
-    "clear_all_confirm": "Sí, eliminar todo"
+    "clear_all_confirm": "Sí, eliminar todo",
+    "welcome_banner": "Bienvenido — <1>{{count}}</1> transacciones listas."
   },
   "errors": {
     "invalid_amount": "Por favor ingresa una cantidad válida mayor a 0",
