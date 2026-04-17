@@ -87,7 +87,7 @@
     "help": "Help & support",
     "help_sub": "Docs and contact",
     "sign_out": "Sign out",
-    "pro_subtitle": "for only $1.99/month · no ads",
+    "pro_subtitle": "for only $4.99/month · no ads",
     "go_pro": "Go Pro",
     "language": "Language",
     "language_sub": "Español · English · Français"
@@ -126,7 +126,7 @@
     "clear_all_title": "Clear all",
     "clear_all_message": "Delete {{count}} transactions?",
     "clear_all_confirm": "Yes, delete all",
-    "welcome_banner": "Welcome — <1>{{count}}</1> transactions ready."
+    "welcome_banner": "Welcome — {{count}} transactions ready."
   },
   "errors": {
     "invalid_amount": "Please enter a valid amount greater than 0",

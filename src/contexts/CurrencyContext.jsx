@@ -77,7 +77,7 @@ export const CurrencyProvider = ({ children }) => {
 
     setRatesLoading(true);
     try {
-      const res = await fetch('https://api.frankfurter.app/latest?from=USD');
+      const res = await fetch('/.netlify/functions/currency-rates');
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
       const newRates = { USD: 1, PAB: 1, ...data.rates };

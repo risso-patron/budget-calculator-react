@@ -1,18 +1,18 @@
 import { useState } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 import { useSubscription } from '../../hooks/useSubscription';
+import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../Shared/ConfirmDialog';
-// import { loadStripe } from '@stripe/stripe-js';
 
-// STRIPE DESACTIVADO TEMPORALMENTE - Activa cuando tengas tu clave
-// const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || null
-// const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null
-const stripePromise = null; // Desactivado hasta configurar Stripe;
+const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || null;
+const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
 
 /**
  * Componente de Pricing - Muestra los planes disponibles
  */
 export const PricingPlans = ({ onClose }) => {
   const { subscription, updateSubscription } = useSubscription();
+  const { session } = useAuth();
   const [loading, setLoading] = useState(false);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
@@ -92,42 +92,38 @@ export const PricingPlans = ({ onClose }) => {
       return;
     }
 
-    // Verificar si Stripe está configurado
     if (!stripePromise) {
-      alert('⚠️ Stripe no está configurado aún. Esta función estará disponible próximamente.\n\nPara configurar Stripe:\n1. Crea una cuenta en stripe.com\n2. Obtén tu clave pública\n3. Agrégala al archivo .env.local');
+      alert('⚠️ El sistema de pagos no está configurado aún.');
       return;
     }
 
-    // Redirect a Stripe Checkout para planes de pago
     setLoading(true);
     try {
       const stripe = await stripePromise;
-      
-      // Llamar a tu backend para crear sesión de checkout
-      const response = await fetch('/api/create-checkout-session', {
+
+      const response = await fetch('/.netlify/functions/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({
-          planId,
-          billingCycle,
-        }),
+        body: JSON.stringify({ planId, billingCycle }),
       });
 
-      const session = await response.json();
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `Error ${response.status}`);
+      }
 
-      // Redirect a Stripe Checkout
-      const result = await stripe.redirectToCheckout({
-        sessionId: session.id,
-      });
+      const checkoutSession = await response.json();
 
+      const result = await stripe.redirectToCheckout({ sessionId: checkoutSession.id });
       if (result.error) {
         alert(result.error.message);
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error al procesar el pago. Por favor intenta de nuevo.');
+      console.error('[PricingPlans] Error al iniciar pago:', error);
+      alert(`Error al procesar el pago: ${error.message}`);
     } finally {
       setLoading(false);
     }

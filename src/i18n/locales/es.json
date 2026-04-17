@@ -87,7 +87,7 @@
     "help": "Ayuda y soporte",
     "help_sub": "Documentación y contacto",
     "sign_out": "Cerrar sesión",
-    "pro_subtitle": "por solo $1.99/mes · sin anuncios",
+    "pro_subtitle": "por solo $4.99/mes · sin anuncios",
     "go_pro": "Ir Pro",
     "language": "Idioma",
     "language_sub": "Español · English · Français"
@@ -126,7 +126,7 @@
     "clear_all_title": "Limpiar todo",
     "clear_all_message": "¿Seguro de eliminar {{count}} transacciones?",
     "clear_all_confirm": "Sí, eliminar todo",
-    "welcome_banner": "Bienvenido — <1>{{count}}</1> transacciones listas."
+    "welcome_banner": "Bienvenido — {{count}} transacciones listas."
   },
   "errors": {
     "invalid_amount": "Por favor ingresa una cantidad válida mayor a 0",

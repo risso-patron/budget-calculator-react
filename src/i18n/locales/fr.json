@@ -87,7 +87,7 @@
     "help": "Aide et support",
     "help_sub": "Documentation et contact",
     "sign_out": "Déconnexion",
-    "pro_subtitle": "pour seulement 1,99 $/mois · sans publicités",
+    "pro_subtitle": "pour seulement 4,99 $/mois · sans publicités",
     "go_pro": "Passer Pro",
     "language": "Langue",
     "language_sub": "Español · English · Français"
@@ -126,7 +126,7 @@
     "clear_all_title": "Tout effacer",
     "clear_all_message": "Supprimer {{count}} transactions ?",
     "clear_all_confirm": "Oui, tout supprimer",
-    "welcome_banner": "Bienvenue — <1>{{count}}</1> transactions prêtes."
+    "welcome_banner": "Bienvenue — {{count}} transactions prêtes."
   },
   "errors": {
     "invalid_amount": "Veuillez entrer un montant valide supérieur à 0",

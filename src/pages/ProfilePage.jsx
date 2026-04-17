@@ -7,8 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { AccountSettingsModal } from '../components/Auth/AccountSettingsModal'
-import { LanguageSelector } from '../components/Shared/LanguageSelector'
-
+import { LanguageSelector } from '../components/Shared/LanguageSelector'import { PricingPlans } from '../components/Subscription/PricingPlans';
 const formatAmount = (n) => {
   if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
   if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`
@@ -27,6 +26,7 @@ export const ProfilePage = ({
   const { theme, setTheme } = useTheme()
   const { t } = useTranslation()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [showPricing, setShowPricing] = useState(false)
 
   const fullName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario'
   const email = user?.email || ''
@@ -166,7 +166,9 @@ export const ProfilePage = ({
               {t('profile.pro_subtitle')}
             </p>
           </div>
-          <button className="bg-white text-violet-700 text-sm font-black px-4 py-2 rounded-2xl shadow-sm hover:bg-violet-50 active:scale-95 transition-all">
+          <button
+              onClick={() => setShowPricing(true)}
+              className="bg-white text-violet-700 text-sm font-black px-4 py-2 rounded-2xl shadow-sm hover:bg-violet-50 active:scale-95 transition-all">
             {t('profile.go_pro')}
           </button>
         </div>
@@ -240,6 +242,9 @@ export const ProfilePage = ({
         onClose={() => setIsSettingsOpen(false)}
         onShowAlert={onShowAlert || (() => {})}
       />
+
+      {/* ── Pricing Modal ── */}
+      {showPricing && <PricingPlans onClose={() => setShowPricing(false)} />}
     </div>
   )
 }
