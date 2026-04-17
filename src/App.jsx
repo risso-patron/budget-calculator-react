@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, X } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -6,9 +6,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { useTransactions } from './hooks/useTransactions';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { STORAGE_KEYS, STRATEGIC_MESSAGES } from './constants/categories';
-import { BudgetForm } from './components/BudgetForm';
-import { ExpenseList } from './components/ExpenseList';
-import { Summary } from './components/Summary';
 import { useFilters } from './hooks/useFilters';
 import { useConfirmDialog } from './hooks/useConfirmDialog';
 import { AppHeader } from './components/AppHeader';
@@ -21,45 +18,46 @@ import MigrationDialog from './components/MigrationDialog';
 import AuthPage from './pages/AuthPage';
 import LandingPage from './pages/LandingPageNew';
 import { hasPendingMigration } from './utils/dataMigration';
-import { CreditCardManager } from './components/CreditCard/CreditCardManager';
-// Nuevos gráficos avanzados
-import { BalanceDonutChart } from './components/Charts/BalanceDonutChart';
-import { ChartsTab } from './components/Charts/ChartsTab';
-import { AIInsightsPanel, AIAlerts, PredictiveChart, AIProviderStatus } from './components/AI';
-import { useAIInsights } from './hooks/useAIInsightsMulti';
-// GRÁFICOS NUEVOS (Fase UX 3: Chart.js)
-import { ExpensePieChart } from './components/Charts/ChartJS/ExpensePieChart';
-import { IncomeExpenseBarChart } from './components/Charts/ChartJS/IncomeExpenseBarChart';
-// FASE UX 4: Sistema de Presupuestos
+// Siempre visible en tab inicial — carga síncrona
+import { Summary } from './components/Summary';
+import { HabitDailyCard } from './components/Dashboard/HabitDailyCard';
 import { GlobalBudgetTracker } from './components/Budget/GlobalBudgetTracker';
-// FASE UX 5: Notificaciones / Recordatorios
+import { AIAlerts, AIProviderStatus } from './components/AI';
+import { useAIInsights } from './hooks/useAIInsightsMulti';
 import { DailyReminder } from './components/Notifications/DailyReminder';
 import { DailyOnboardingToast } from './components/Notifications/DailyOnboardingToast';
-// HÁBITO DIARIO
-import { HabitDailyCard } from './components/Dashboard/HabitDailyCard';
 import { FloatingChatButton } from './components/Shared/FloatingChatButton';
 import { FloatingChatWidget } from './components/Shared/FloatingChatWidget';
 import { Omnibar } from './components/Shared/Omnibar';
 import { Sidebar } from './components/Shared/Sidebar';
-// FEATURES PREMIUM
-import { GoalManager } from './features/goals/GoalManager';
-import { ExportManager } from './features/export/ExportManager';
-import ImportManager from './features/import/ImportManager';
-// GAMIFICACIÓN
-import { GamificationDashboard, AchievementNotifications } from './features/gamification';
-import { useAchievements } from './hooks/gamification/useAchievements';// NUEVAS FEATURES: Presupuestos + Chat IA
-import { BudgetManager } from './features/budgets/BudgetManager'
-import { AIChat } from './features/chat/AIChat'
-// FEATURE 1: Transacciones Recurrentes
-import { useRecurring } from './hooks/useRecurring'
-import { RecurringManager } from './features/recurring/RecurringManager'
-// FEATURE 2: Multi-moneda
-import { CurrencyProvider } from './contexts/CurrencyContext'
-import { CurrencySelector } from './features/currency/CurrencySelector'
 import { InstallPWA } from './components/InstallPWA';
 import { BottomNav } from './components/Shared/BottomNav';
-import { ProfilePage } from './pages/ProfilePage';
+import { useAchievements } from './hooks/gamification/useAchievements';
+import { AchievementNotifications } from './features/gamification/AchievementNotification';
+import { useRecurring } from './hooks/useRecurring';
+import { CurrencyProvider } from './contexts/CurrencyContext';
+import { CurrencySelector } from './features/currency/CurrencySelector';
 import { filterByMonth } from './utils/calculations';
+
+// Tabs lazy — solo se cargan cuando el usuario navega a esa sección
+const BudgetForm = lazy(() => import('./components/BudgetForm').then(m => ({ default: m.BudgetForm })));
+const ExpenseList = lazy(() => import('./components/ExpenseList').then(m => ({ default: m.ExpenseList })));
+const ChartsTab = lazy(() => import('./components/Charts/ChartsTab').then(m => ({ default: m.ChartsTab })));
+const CreditCardManager = lazy(() => import('./components/CreditCard/CreditCardManager').then(m => ({ default: m.CreditCardManager })));
+const BudgetManager = lazy(() => import('./features/budgets/BudgetManager').then(m => ({ default: m.BudgetManager })));
+const RecurringManager = lazy(() => import('./features/recurring/RecurringManager').then(m => ({ default: m.RecurringManager })));
+const GoalManager = lazy(() => import('./features/goals/GoalManager').then(m => ({ default: m.GoalManager })));
+const ExportManager = lazy(() => import('./features/export/ExportManager').then(m => ({ default: m.ExportManager })));
+const ImportManager = lazy(() => import('./features/import/ImportManager'));
+const GamificationDashboard = lazy(() => import('./features/gamification').then(m => ({ default: m.GamificationDashboard })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AIInsightsPanel = lazy(() => import('./components/AI').then(m => ({ default: m.AIInsightsPanel })));
+
+const TabLoader = () => (
+  <div className="flex items-center justify-center py-16">
+    <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -285,18 +283,19 @@ function AppContent() {
                     </button>
                     {showGamification && (
                       <div className="mt-3">
-                        <GamificationDashboard currentLevel={achievements.currentLevel} totalPoints={achievements.totalPoints} pointsForNext={achievements.pointsForNext} levelProgress={achievements.levelProgress} currentStreak={achievements.stats.currentStreak} longestStreak={achievements.stats.longestStreak} unlockedAchievements={achievements.unlockedAchievements} isAchievementUnlocked={achievements.isAchievementUnlocked} />
+                        <Suspense fallback={<TabLoader />}>
+                          <GamificationDashboard currentLevel={achievements.currentLevel} totalPoints={achievements.totalPoints} pointsForNext={achievements.pointsForNext} levelProgress={achievements.levelProgress} currentStreak={achievements.stats.currentStreak} longestStreak={achievements.stats.longestStreak} unlockedAchievements={achievements.unlockedAchievements} isAchievementUnlocked={achievements.isAchievementUnlocked} />
+                        </Suspense>
                       </div>
                     )}
                   </div>
                 </>
               )}
-
-              {activeTab === 'graficos' && <ChartsTab filteredIncomes={filteredIncomes} filteredExpenses={filteredExpenses} filteredTotalIncome={filteredTotalIncome} filteredTotalExpenses={filteredTotalExpenses} filteredBalance={filteredBalance} categoryAnalysis={categoryAnalysis} />}
-              {activeTab === 'movimientos' && <><BudgetForm key={budgetFormKey} onAddIncome={handleAddIncome} onAddExpense={handleAddExpense} /><ExpenseList incomes={incomes} expenses={expenses} onRemoveIncome={id => openConfirm({title: 'Eliminar ingreso', message: '¿Seguro?', onConfirm: () => {removeIncome(id); closeConfirm()}})} onRemoveExpense={id => openConfirm({title: 'Eliminar gasto', message: '¿Seguro?', onConfirm: () => {removeExpense(id); closeConfirm()}})} onUpdateIncome={updateIncome} onUpdateExpense={updateExpense} onRemoveMultiple={removeMultiple} onCategorizeMultiple={categorizeMultiple} /></>}
-              {activeTab === 'planificacion' && <><CreditCardManager creditCards={creditCards} onAddCard={handleAddCard} onUpdateDebt={handleUpdateDebt} onRemoveCard={handleRemoveCard} /><BudgetManager expenses={filteredExpenses} /><RecurringManager recurring={recurring} onAdd={addRecurring} onToggle={toggleRecurring} onRemove={removeRecurring} /><GoalManager goals={goals} onAddGoal={handleAddGoal} onUpdateProgress={handleUpdateGoalProgress} onDeleteGoal={handleDeleteGoal} currentBalance={balance} /></>}
-              {activeTab === 'herramientas' && <><ExportManager incomes={incomes} expenses={expenses} categoryAnalysis={categoryAnalysis} totalIncome={totalIncome} totalExpenses={totalExpenses} balance={balance} onExport={() => achievements.updateStats({ dataExported: true })} /><ImportManager onImport={handleImportTransaction} onBulkImport={handleBulkImportTransaction} /></>}
-              {activeTab === 'cuenta' && <ProfilePage filteredTotalExpenses={filteredTotalExpenses} totalTransactions={allTransactions.length} currentStreak={achievements.stats.currentStreak} categoryCount={categoryAnalysis.length} onNavigate={setActiveTab} onShowAlert={showAlert} />}
+              {activeTab === 'graficos' && <Suspense fallback={<TabLoader />}><ChartsTab filteredIncomes={filteredIncomes} filteredExpenses={filteredExpenses} filteredTotalIncome={filteredTotalIncome} filteredTotalExpenses={filteredTotalExpenses} filteredBalance={filteredBalance} categoryAnalysis={categoryAnalysis} /></Suspense>}
+              {activeTab === 'movimientos' && <Suspense fallback={<TabLoader />}><BudgetForm key={budgetFormKey} onAddIncome={handleAddIncome} onAddExpense={handleAddExpense} /><ExpenseList incomes={incomes} expenses={expenses} onRemoveIncome={id => openConfirm({title: 'Eliminar ingreso', message: '¿Seguro?', onConfirm: () => {removeIncome(id); closeConfirm()}})} onRemoveExpense={id => openConfirm({title: 'Eliminar gasto', message: '¿Seguro?', onConfirm: () => {removeExpense(id); closeConfirm()}})} onUpdateIncome={updateIncome} onUpdateExpense={updateExpense} onRemoveMultiple={removeMultiple} onCategorizeMultiple={categorizeMultiple} /></Suspense>}
+              {activeTab === 'planificacion' && <Suspense fallback={<TabLoader />}><CreditCardManager creditCards={creditCards} onAddCard={handleAddCard} onUpdateDebt={handleUpdateDebt} onRemoveCard={handleRemoveCard} /><BudgetManager expenses={filteredExpenses} /><RecurringManager recurring={recurring} onAdd={addRecurring} onToggle={toggleRecurring} onRemove={removeRecurring} /><GoalManager goals={goals} onAddGoal={handleAddGoal} onUpdateProgress={handleUpdateGoalProgress} onDeleteGoal={handleDeleteGoal} currentBalance={balance} /></Suspense>}
+              {activeTab === 'herramientas' && <Suspense fallback={<TabLoader />}><ExportManager incomes={incomes} expenses={expenses} categoryAnalysis={categoryAnalysis} totalIncome={totalIncome} totalExpenses={totalExpenses} balance={balance} onExport={() => achievements.updateStats({ dataExported: true })} /><ImportManager onImport={handleImportTransaction} onBulkImport={handleBulkImportTransaction} /></Suspense>}
+              {activeTab === 'cuenta' && <Suspense fallback={<TabLoader />}><ProfilePage filteredTotalExpenses={filteredTotalExpenses} totalTransactions={allTransactions.length} currentStreak={achievements.stats.currentStreak} categoryCount={categoryAnalysis.length} onNavigate={setActiveTab} onShowAlert={showAlert} /></Suspense>}
             </main>
             <InstallPWA />
           </div>
