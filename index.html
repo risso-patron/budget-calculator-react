@@ -38,6 +38,36 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1e1b4b" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Saldo",
+      "url": "https://budget-calculator-rp.netlify.app/",
+      "description": "Controla tus finanzas con IA. Registra ingresos y gastos, visualiza análisis con gráficos interactivos y recibe recomendaciones personalizadas. Gratis, sin registro.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Control de ingresos y gastos",
+        "Análisis con inteligencia artificial",
+        "Gráficos interactivos",
+        "Metas de ahorro",
+        "Presupuestos mensuales",
+        "Gamificación financiera",
+        "Soporte multiidioma"
+      ],
+      "inLanguage": ["es", "en", "fr"],
+      "isAccessibleForFree": true,
+      "browserRequirements": "Requires JavaScript"
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
