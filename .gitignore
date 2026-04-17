@@ -61,3 +61,10 @@ Desktop.ini
 .project
 .classpath
 .settings/
+ 
+# Archivos/directorios basura eliminados del indice 
+App 
+data 
+{ 
+build-output.txt 
+src/pages/b_E10dJewJ7UM/
