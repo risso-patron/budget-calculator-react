@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  plugins: [react()],
+  // Skip @vitejs/plugin-react under Vitest — Vitest 4 uses OXC which handles JSX natively.
+  // @vitejs/plugin-react (Babel) crashes with Vitest 4's internal Vite 6.
+  plugins: [process.env.VITEST ? [] : react()],
 
   // En producción: las API keys de IA NO deben ir al bundle del cliente.
   // El proxy de Netlify Functions las lee desde process.env (sin prefijo VITE_).

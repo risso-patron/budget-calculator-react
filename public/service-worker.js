@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-rp-cache-v2';
+const CACHE_NAME = 'budget-rp-cache-v3';
 
 // Recursos esenciales iniciales (App Shell)
 // NOTA: index.html se excluye deliberadamente — usa Network-First para siempre
@@ -7,7 +7,8 @@ const INITIAL_CACHED_RESOURCES = [
   '/manifest.json',
   '/favicon.svg',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-512x512.png',
+  '/offline.html'
 ];
 
 self.addEventListener('install', (event) => {
@@ -65,7 +66,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('/offline.html')))
     );
     return;
   }
@@ -89,11 +90,11 @@ self.addEventListener('fetch', (event) => {
 
         return networkResponse;
       }).catch(() => {
-        return new Response("No hay conexión a internet.", {
-          status: 503,
-          statusText: "Service Unavailable",
-          headers: new Headers({ "Content-Type": "text/plain" })
-        });
+        // Para navegación (HTML), servir la página offline
+        if (event.request.headers.get('accept')?.includes('text/html')) {
+          return caches.match('/offline.html');
+        }
+        return new Response('', { status: 503, statusText: 'Service Unavailable' });
       });
     })
   );

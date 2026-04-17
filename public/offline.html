@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" style="background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;height:100%">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saldo — Sin conexión</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:#0f172a}
+    .card{max-width:400px;width:100%;text-align:center}
+    .icon{font-size:4rem;margin-bottom:1.5rem;display:block}
+    h1{font-size:1.5rem;font-weight:900;letter-spacing:-.03em;margin-bottom:.5rem;color:#f8fafc}
+    p{font-size:.9rem;color:#94a3b8;line-height:1.6;margin-bottom:2rem}
+    .badge{display:inline-block;background:#7c3aed;color:#fff;font-size:.7rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;padding:.3rem .8rem;border-radius:.5rem;margin-bottom:1.5rem}
+    button{background:#7c3aed;color:#fff;border:none;padding:.75rem 2rem;border-radius:.75rem;font-size:.9rem;font-weight:800;cursor:pointer;transition:opacity .2s}
+    button:hover{opacity:.85}
+    .hint{margin-top:1.5rem;font-size:.78rem;color:#475569}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="icon">📡</span>
+    <div class="badge">Saldo</div>
+    <h1>Sin conexión a internet</h1>
+    <p>Parece que no hay red disponible. Tus datos están seguros — están guardados localmente en tu dispositivo.</p>
+    <button onclick="window.location.reload()">Reintentar</button>
+    <p class="hint">Cuando vuelva la conexión, la app se actualizará automáticamente.</p>
+  </div>
+</body>
+</html>

@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { calculateTotal, calculateBalance, calculateCategoryAnalysis, filterByYear } from '../utils/calculations';
 
 describe('Cálculos de Presupuesto', () => {

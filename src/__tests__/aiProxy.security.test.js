@@ -1,6 +1,6 @@
 /* @vitest-environment node */
 
-import { describe, expect, it, beforeEach } from 'vitest';
+
 import { handler, __private } from '../../netlify/functions/ai-proxy.js';
 
 describe('ai-proxy security', () => {

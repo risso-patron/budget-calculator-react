@@ -2,15 +2,15 @@ import { useTranslation } from 'react-i18next'
 import { Globe } from '@phosphor-icons/react'
 
 const LANGUAGES = [
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'es', label: 'Español', short: 'ES' },
+  { code: 'en', label: 'English', short: 'EN' },
+  { code: 'fr', label: 'Français', short: 'FR' },
 ]
 
 /**
- * LanguageSelector — muestra banderas para cambiar idioma.
- * compact=true: solo banderas (para sidebar / profile)
- * compact=false: banderas + nombre completo
+ * LanguageSelector — cambia idioma de la app.
+ * compact=true: pills para sidebar
+ * compact=false: con ícono globe y nombre completo
  */
 export const LanguageSelector = ({ compact = false }) => {
   const { i18n } = useTranslation()
@@ -18,22 +18,25 @@ export const LanguageSelector = ({ compact = false }) => {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-0.5">
-        {LANGUAGES.map(lang => (
-          <button
-            key={lang.code}
-            onClick={() => i18n.changeLanguage(lang.code)}
-            title={lang.label}
-            className={[
-              'w-8 h-8 rounded-xl text-base transition-all duration-200',
-              current === lang.code
-                ? 'bg-violet-500/20 scale-110 shadow-sm'
-                : 'text-slate-400 hover:bg-white/5 hover:scale-105 opacity-60 hover:opacity-100',
-            ].join(' ')}
-          >
-            {lang.flag}
-          </button>
-        ))}
+      <div className="flex items-center gap-1.5">
+        <Globe size={13} weight="bold" className="text-slate-500 shrink-0" />
+        <div className="flex items-center gap-1 bg-slate-800/60 rounded-xl p-1 border border-white/5">
+          {LANGUAGES.map(lang => (
+            <button
+              key={lang.code}
+              onClick={() => i18n.changeLanguage(lang.code)}
+              title={lang.label}
+              className={[
+                'px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all duration-200',
+                current === lang.code
+                  ? 'bg-violet-500 text-white shadow-sm shadow-violet-500/30'
+                  : 'text-slate-400 hover:text-white hover:bg-white/10',
+              ].join(' ')}
+            >
+              {lang.short}
+            </button>
+          ))}
+        </div>
       </div>
     )
   }
@@ -60,7 +63,7 @@ export const LanguageSelector = ({ compact = false }) => {
                   : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700',
               ].join(' ')}
             >
-              {lang.flag} {lang.code.toUpperCase()}
+              {lang.short}
             </button>
           ))}
         </div>

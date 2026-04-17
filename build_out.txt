@@ -1,0 +1,40 @@
+
+> saldo@1.0.0 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 11 modules transformed.
+[31mx[39m Build failed in 730ms
+[31merror during build:
+[31m[vite:esbuild] Transform failed with 2 errors:
+E:/Dev/@Activos/Saldo/src/App.jsx:293:293: ERROR: Unexpected closing "Suspense" tag does not match opening "main" tag
+E:/Dev/@Activos/Saldo/src/App.jsx:294:0: ERROR: Expected ">" but found "Suspense"[31m
+file: [36mE:/Dev/@Activos/Saldo/src/App.jsx:293:293[31m
+[33m
+[33mUnexpected closing "Suspense" tag does not match opening "main" tag[33m
+291|                    </div>
+292|                  </>
+293|                )}Suspense fallback={<TabLoader />}><ChartsTab filteredIncomes={filteredIncomes} filteredExpenses={filteredExpenses} filteredTotalIncome={filteredTotalIncome} filteredTotalExpenses={filteredTotalExpenses} filteredBalance={filteredBalance} categoryAnalysis={categoryAnalysis} /></Suspense
+   |                                                                                                                                                                                                                                                                                                       ^
+294|  Suspense fallback={<TabLoader />}><BudgetForm key={budgetFormKey} onAddIncome={handleAddIncome} onAddExpense={handleAddExpense} /><ExpenseList incomes={incomes} expenses={expenses} onRemoveIncome={id => openConfirm({title: 'Eliminar ingreso', message: '¿Seguro?', onConfirm: () => {removeIncome(id); closeConfirm()}})} onRemoveExpense={id => openConfirm({title: 'Eliminar gasto', message: '¿Seguro?', onConfirm: () => {removeExpense(id); closeConfirm()}})} onUpdateIncome={updateIncome} onUpdateExpense={updateExpense} onRemoveMultiple={removeMultiple} onCategorizeMultiple={categorizeMultiple} /></Suspense
+295|                {activeTab === 'graficos' && <SuspeSuspense fallback={<TabLoader />}><CreditCardManager creditCards={creditCards} onAddCard={handleAddCard} onUpdateDebt={handleUpdateDebt} onRemoveCard={handleRemoveCard} /><BudgetManager expenses={filteredExpenses} /><RecurringManager recurring={recurring} onAdd={addRecurring} onToggle={toggleRecurring} onRemove={removeRecurring} /><GoalManager goals={goals} onAddGoal={handleAddGoal} onUpdateProgress={handleUpdateGoalProgress} onDeleteGoal={handleDeleteGoal} currentBalance={balance} /></Suspense
+
+[33mExpected ">" but found "Suspense"[33m
+292|                  </>
+293|                )}Suspense fallback={<TabLoader />}><ChartsTab filteredIncomes={filteredIncomes} filteredExpenses={filteredExpenses} filteredTotalIncome={filteredTotalIncome} filteredTotalExpenses={filteredTotalExpenses} filteredBalance={filteredBalance} categoryAnalysis={categoryAnalysis} /></Suspense
+294|  Suspense fallback={<TabLoader />}><BudgetForm key={budgetFormKey} onAddIncome={handleAddIncome} onAddExpense={handleAddExpense} /><ExpenseList incomes={incomes} expenses={expenses} onRemoveIncome={id => openConfirm({title: 'Eliminar ingreso', message: '¿Seguro?', onConfirm: () => {removeIncome(id); closeConfirm()}})} onRemoveExpense={id => openConfirm({title: 'Eliminar gasto', message: '¿Seguro?', onConfirm: () => {removeExpense(id); closeConfirm()}})} onUpdateIncome={updateIncome} onUpdateExpense={updateExpense} onRemoveMultiple={removeMultiple} onCategorizeMultiple={categorizeMultiple} /></Suspense
+   |  ^
+295|                {activeTab === 'graficos' && <SuspeSuspense fallback={<TabLoader />}><CreditCardManager creditCards={creditCards} onAddCard={handleAddCard} onUpdateDebt={handleUpdateDebt} onRemoveCard={handleRemoveCard} /><BudgetManager expenses={filteredExpenses} /><RecurringManager recurring={recurring} onAdd={addRecurring} onToggle={toggleRecurring} onRemove={removeRecurring} /><GoalManager goals={goals} onAddGoal={handleAddGoal} onUpdateProgress={handleUpdateGoalProgress} onDeleteGoal={handleDeleteGoal} currentBalance={balance} /></Suspense
+296|                {activeTab === 'movimientos' && <SSuspense fallback={<TabLoader />}><ExportManager incomes={incomes} expenses={expenses} categoryAnalysis={categoryAnalysis} totalIncome={totalIncome} totalExpenses={totalExpenses} balance={balance} onExport={() => achievements.updateStats({ dataExported: true })} /><ImportManager onImport={handleImportTransaction} onBulkImport={handleBulkImportTransaction} /></Suspenseense={id => openConfirm({title: 'Eliminar gasto', message: '¿Seguro?', onConfirm: () => {removeExpense(id); closeConfirm()}})} onUpdateIncome={updateIncome} onUpdateExpense={updateExpense} onRemoveMultiple={removeMultiple} onCategorizeMultiple={categorizeMultiple} /></Suspense>}
+[31m
+    at failureErrorWithLog (e:\Dev\@Activos\Saldo\node_modules\esbuild\lib\main.js:1472:15)
+    at e:\Dev\@Activos\Saldo\node_modules\esbuild\lib\main.js:755:50
+    at responseCallbacks.<computed> (e:\Dev\@Activos\Saldo\node_modules\esbuild\lib\main.js:622:9)
+    at handleIncomingPacket (e:\Dev\@Activos\Saldo\node_modules\esbuild\lib\main.js:677:12)
+    at Socket.readFromStdout (e:\Dev\@Activos\Saldo\node_modules\esbuild\lib\main.js:600:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)[39m

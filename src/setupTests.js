@@ -1,15 +1,9 @@
-import '@testing-library/jest-dom'
-
-// Mock de variables de entorno para tests
-globalThis.import = {
-  meta: {
-    env: {
-      VITE_SUPABASE_URL: 'https://test.supabase.co',
-      VITE_SUPABASE_ANON_KEY: 'test-key',
-      VITE_STRIPE_PUBLIC_KEY: 'pk_test_key',
-    }
-  }
-}
+import * as matchers from '@testing-library/jest-dom/matchers'
+// Extend the global expect with jest-dom matchers.
+// Using import '@testing-library/jest-dom/vitest' fails in Vitest 4 because that
+// entry imports expect from 'vitest' which creates a fresh module context — a
+// different object than the globalThis.expect injected by the runner.
+expect.extend(matchers)
 
 // Mock de localStorage
 const localStorageMock = {

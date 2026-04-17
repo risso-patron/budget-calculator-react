@@ -33,6 +33,7 @@ export const formatCurrency = (amount, currencyCode = 'USD') => {
  * @returns {string} - Fecha formateada (ej: "3 de Nov, 2025")
  */
 export const formatDate = (date, options = {}, locale = undefined) => {
+  if (date === null || date === undefined) return 'Fecha inválida';
   const dateObj = date instanceof Date ? date : new Date(date);
   
   if (isNaN(dateObj.getTime())) {
