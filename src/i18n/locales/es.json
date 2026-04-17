@@ -21,8 +21,16 @@
     "analytics": "Analytics",
     "goals": "Metas / Cards",
     "tools": "Power Tools",
-    "search": "Buscar..."
+    "search": "Buscar...",
+    "finanzas": "Finanzas"
   },
+  "quotes": [
+    "Tu presupuesto es el mapa hacia tu libertad.",
+    "Ahorrar es comprar tu tiempo del futuro.",
+    "La resiliencia se construye un centavo a la vez.",
+    "Controla tu dinero o él te controlará a ti.",
+    "La verdadera riqueza es la libertad de elegir."
+  ],
   "summary": {
     "income": "Ingresos",
     "expenses": "Egresos",

@@ -21,8 +21,16 @@
     "analytics": "Analytique",
     "goals": "Objectifs / Cartes",
     "tools": "Outils avancés",
-    "search": "Rechercher..."
+    "search": "Rechercher...",
+    "finanzas": "Finances"
   },
+  "quotes": [
+    "Votre budget est la carte vers votre liberté.",
+    "Épargner, c'est acheter votre temps futur.",
+    "La résilience se construit centime par centime.",
+    "Contrôlez votre argent ou il vous contrôlera.",
+    "La vraie richesse, c'est la liberté de choisir."
+  ],
   "summary": {
     "income": "Revenus",
     "expenses": "Dépenses",

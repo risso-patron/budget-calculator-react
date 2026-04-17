@@ -47,7 +47,7 @@ export const Sidebar = ({
             </h2>
             <div className="flex items-center gap-1.5 mt-1.5">
               <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                Finanzas
+                {t('sidebar.finanzas')}
               </span>
               <CloudCheck size={12} weight="fill" className="text-emerald-500" />
             </div>

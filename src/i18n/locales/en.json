@@ -21,8 +21,16 @@
     "analytics": "Analytics",
     "goals": "Goals / Cards",
     "tools": "Power Tools",
-    "search": "Search..."
+    "search": "Search...",
+    "finanzas": "Finance"
   },
+  "quotes": [
+    "Your budget is the map to your freedom.",
+    "Saving is buying your future time.",
+    "Resilience is built one cent at a time.",
+    "Control your money or it will control you.",
+    "True wealth is the freedom to choose."
+  ],
   "summary": {
     "income": "Income",
     "expenses": "Expenses",

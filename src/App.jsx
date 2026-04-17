@@ -61,7 +61,7 @@ const TabLoader = () => (
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [showAuth, setShowAuth] = useState(false);
   const [showMigration, setShowMigration] = useState(false);
   const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
@@ -84,9 +84,10 @@ function AppContent() {
 
   const [quote, setQuote] = useState('');
   useEffect(() => {
-    const quotes = STRATEGIC_MESSAGES.QUOTES;
-    setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-  }, []);
+    const quotes = t('quotes', { returnObjects: true });
+    const list = Array.isArray(quotes) ? quotes : STRATEGIC_MESSAGES.QUOTES;
+    setQuote(list[Math.floor(Math.random() * list.length)]);
+  }, [i18n.language, t]);
 
   const {
     incomes, expenses, alert, addIncome, addExpense, addBulkTransactions, updateIncome, updateExpense,
